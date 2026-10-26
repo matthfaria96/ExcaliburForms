@@ -129,8 +129,10 @@
       flex-direction: row-reverse;
     }
 
-    // undo/redo live in the host's Edit menu (⌘Z / ⇧⌘Z)
-    .undo-redo-buttons {
+    // undo/redo live in the host's Edit menu (⌘Z / ⇧⌘Z) and the host draws
+    // its own zoom control
+    .undo-redo-buttons,
+    .zoom-actions {
       display: none;
     }
   }

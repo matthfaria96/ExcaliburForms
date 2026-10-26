@@ -30,6 +30,8 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var isReady = false
     @Published private(set) var activeTool: Tool?
     @Published private(set) var hasSelection = false
+    /// Zoom do canvas (1 = 100%).
+    @Published private(set) var zoom: Double = 1
     @Published private(set) var editorTheme: EditorTheme = .light
     @Published private(set) var strokeColor: String? = TextColor.defaultHex
     /// Fonte padrão das ferramentas texto e nota.
@@ -132,6 +134,7 @@ final class EditorController: NSObject, ObservableObject {
     private func handleState(_ body: [String: Any]) {
         activeTool = (body["tool"] as? String).flatMap(Tool.init(rawValue:))
         hasSelection = body["hasSelection"] as? Bool ?? false
+        if let value = body["zoom"] as? Double, value > 0 { zoom = value }
         if let theme = body["theme"] as? String {
             editorTheme = theme == "dark" ? .dark : .light
         }

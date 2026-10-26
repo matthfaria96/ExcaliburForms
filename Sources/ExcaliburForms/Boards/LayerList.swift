@@ -54,11 +54,18 @@ struct LayerList: View {
                 Button("Apagar", role: .destructive) { editor.layerAction(layer.id, "delete") }
             } label: {
                 Image(systemName: "ellipsis")
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Circle())
             }
-            .menuStyle(.borderlessButton)
+            // estilo de botão simples: o rótulo herda a cor (o menu sem borda
+            // pintava o ícone de preto mesmo no modo escuro)
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
             .menuIndicator(.hidden)
             .fixedSize()
+            .help("Mais opções")
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())

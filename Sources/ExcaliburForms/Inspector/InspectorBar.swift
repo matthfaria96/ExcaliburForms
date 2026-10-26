@@ -284,14 +284,14 @@ struct InspectorButtonStyle: ButtonStyle {
         }
         .font(.system(size: 13, weight: .medium))
         .frame(height: 26)
-        .foregroundStyle(isActive ? Color.accentColor : Color.primary)
+        .foregroundStyle(isActive ? Color.white : Color.primary)
         .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            Capsule(style: .continuous)
                 .fill(configuration.isPressed
                       ? Color.primary.opacity(0.14)
-                      : isActive ? Color.accentColor.opacity(0.18) : Color.clear)
+                      : isActive ? Color.accentColor : Color.clear)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .contentShape(Capsule(style: .continuous))
     }
 }
 
@@ -469,12 +469,14 @@ extension View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
         if #available(macOS 26.0, *) {
-            padded.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            // raio = metade da altura de uma linha: pílula numa linha, cantos
+            // bem redondos em duas
+            padded.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         } else {
             padded
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.08))
                 )
                 .shadow(color: .black.opacity(0.18), radius: 18, y: 6)

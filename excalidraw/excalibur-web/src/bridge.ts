@@ -19,6 +19,8 @@ export type NativeMessage =
       theme: "light" | "dark";
       /** the text tool's default text color */
       strokeColor: string;
+      /** zoom factor (1 = 100%) */
+      zoom: number;
       /** the text and note tools' default font family */
       fontFamily: number;
       /** the text tool's default marker color; `null` when the marker is off */

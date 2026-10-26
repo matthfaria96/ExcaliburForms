@@ -204,6 +204,8 @@ const toNativeState = (
   hasSelection: Object.keys(appState.selectedElementIds).length > 0,
   theme: appState.theme,
   strokeColor: appState.currentItemStrokeColor,
+  /** zoom factor (1 = 100%) for the native zoom control */
+  zoom: Math.round(appState.zoom.value * 100) / 100,
   fontFamily: appState.currentItemFontFamily,
   highlightColor: appState.currentItemTextHighlight
     ? appState.currentItemHighlightColor

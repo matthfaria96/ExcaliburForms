@@ -33,6 +33,10 @@ struct ContentView: View {
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
 
+            ZoomControl()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(14)
+
             GeometryReader { proxy in
                 let insets = inspectorInsets(width: proxy.size.width)
                 InspectorBar()
@@ -111,32 +115,36 @@ struct ContentView: View {
             ToolPalette()
         }
         ToolbarItem(placement: .primaryAction) {
-            Menu {
-                Button("Copiar como imagem") { ExportService.copyPNG(editor) }
-                Divider()
-                exportItems(.png)
-                exportItems(.svg)
-            } label: {
-                Label("Compartilhar", systemImage: "square.and.arrow.up")
+            ShareMenu {
+                Button {
+                    ExportService.copyPNG(editor)
+                } label: {
+                    Label("Copiar como imagem", systemImage: "doc.on.doc")
+                }
+                Divider().padding(.vertical, 4)
+                exportRow(.png, scope: .auto, title: "Exportar PNG…", symbol: "photo")
+                exportRow(.svg, scope: .auto, title: "Exportar SVG…", symbol: "square.on.circle")
+                exportRow(.png, scope: .viewport, title: "Área visível (PNG)…", symbol: "viewfinder")
             }
-            .help("Copiar ou exportar")
         }
     }
 
-    @ViewBuilder
-    private func exportItems(_ format: ExportFormat) -> some View {
-        Menu("Exportar \(format.label)") {
-            ForEach([ExportScope.board, .selection, .viewport]) { scope in
-                Button(scope.label) {
-                    ExportService.export(
-                        editor,
-                        format: format,
-                        scope: scope,
-                        suggestedName: library.selectedBoard?.name ?? "Quadro"
-                    )
-                }
-                .disabled(scope == .selection && !editor.hasSelection)
-            }
+    /// Linha de exportação; `auto` = a seleção, ou o quadro sem seleção.
+    private func exportRow(
+        _ format: ExportFormat,
+        scope: ExportScope,
+        title: String,
+        symbol: String
+    ) -> some View {
+        Button {
+            ExportService.export(
+                editor,
+                format: format,
+                scope: scope,
+                suggestedName: library.selectedBoard?.name ?? "Quadro"
+            )
+        } label: {
+            Label(title, systemImage: symbol)
         }
     }
 
@@ -290,5 +298,121 @@ private struct ToolButtonStyle: ButtonStyle {
 private extension Tool {
     var helpText: String {
         shortcut.map { "\(label) (\($0))" } ?? label
+    }
+}
+
+// MARK: - Compartilhar e zoom
+
+/// Botão "Exportar" em destaque na barra (botão de verdade: um `Menu` a barra
+/// reduz a só o ícone). Abre um painel com as opções, como o do Freeform.
+private struct ShareMenu<Items: View>: View {
+    @ViewBuilder let items: Items
+    @State private var open = false
+
+    var body: some View {
+        let button = Button {
+            open.toggle()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.arrow.up")
+                Text("Exportar")
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .padding(.horizontal, 6)
+        }
+        .help("Copiar ou exportar o quadro")
+        .popover(isPresented: $open, arrowEdge: .bottom) {
+            SharePanel(close: { open = false }) { items }
+        }
+
+        if #available(macOS 26.0, *) {
+            button.buttonStyle(.glassProminent)
+        } else {
+            button.buttonStyle(.borderedProminent)
+        }
+    }
+}
+
+/// Conteúdo do painel de exportar: os itens do menu como botões de linha.
+private struct SharePanel<Items: View>: View {
+    let close: () -> Void
+    @ViewBuilder let items: Items
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            items
+        }
+        .buttonStyle(ShareRowStyle(close: close))
+        .menuStyle(.borderlessButton)
+        .padding(8)
+        .frame(width: 240)
+    }
+}
+
+/// Linha clicável do painel de exportar (realce no hover, fecha ao clicar).
+private struct ShareRowStyle: ButtonStyle {
+    let close: () -> Void
+
+    func makeBody(configuration: Configuration) -> some View {
+        ShareRow(configuration: configuration, close: close)
+    }
+
+    private struct ShareRow: View {
+        let configuration: ButtonStyleConfiguration
+        let close: () -> Void
+        @State private var hovering = false
+
+        var body: some View {
+            configuration.label
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(hovering ? Color.accentColor : .clear)
+                )
+                .foregroundStyle(hovering ? Color.white : Color.primary)
+                .contentShape(Rectangle())
+                .onHover { hovering = $0 }
+                .onChange(of: configuration.isPressed) { _, pressed in
+                    if !pressed { close() }
+                }
+        }
+    }
+}
+
+/// Zoom no canto inferior direito: − porcentagem +, numa cápsula de vidro.
+/// Clicar na porcentagem volta a 100%.
+private struct ZoomControl: View {
+    @EnvironmentObject private var editor: EditorController
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Button {
+                editor.command(.zoomOut)
+            } label: {
+                Image(systemName: "minus")
+            }
+            .help("Afastar (⌘−)")
+
+            Button {
+                editor.command(.resetZoom)
+            } label: {
+                Text("\(Int((editor.zoom * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(minWidth: 44)
+            }
+            .help("Tamanho real (⌘0)")
+
+            Button {
+                editor.command(.zoomIn)
+            } label: {
+                Image(systemName: "plus")
+            }
+            .help("Aproximar (⌘+)")
+        }
+        .buttonStyle(InspectorButtonStyle(showsTitle: true))
+        .font(.system(size: 12, weight: .semibold))
+        .inspectorCapsule()
     }
 }
