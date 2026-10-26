@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Gera o ícone do ExcaliburForms (1024px) e o conjunto de PNGs do .iconset.
 
-Estilo Freeform/macOS 27: squircle claro de vidro na grade da Apple (824px
-centrado), um cartão em degradê azul→turquesa levemente inclinado, uma faixa
-de marca-texto amarela e um rabisco branco com laços por cima.
+Estilo macOS 27 (inspirado em quadros brancos como o Freeform, com elementos
+próprios): squircle claro na grade da Apple (824px centrado), um círculo
+amarelo→laranja (o marca-texto), um cartão de vidro azul translúcido por cima
+e um rabisco cursivo de tinta escura, com volume, atravessando os dois.
 
 Uso:
   python3 scripts/make-icon.py [iconset_dir] [master_png]
 
 Depois rode:
   iconutil -c icns <iconset_dir> -o Resources/AppIcon.icns
+
+Precisa de numpy e Pillow (num venv: python3 -m venv v && v/bin/pip install numpy pillow).
 """
 import math
 import os
@@ -29,120 +32,126 @@ def px(v):
     return int(round(v * SS))
 
 
-def squircle_mask(size, box, n=5.0):
+def squircle_mask(box, n=5.0):
     """Superelipse (|x|^n + |y|^n <= 1) no retângulo `box`, como os ícones do macOS."""
     x0, y0, x1, y1 = box
-    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32)
+    yy, xx = np.mgrid[0:W, 0:W].astype(np.float32)
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     rx, ry = (x1 - x0) / 2, (y1 - y0) / 2
     v = np.abs((xx - cx) / rx) ** n + np.abs((yy - cy) / ry) ** n
     return Image.fromarray((np.clip((1.0 - v) * 40, 0, 1) * 255).astype(np.uint8), "L")
 
 
-def linear_gradient(size, c1, c2, angle_deg):
-    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / (size - 1)
-    a = math.radians(angle_deg)
-    t = np.clip((xx * math.cos(a) + yy * math.sin(a) - min(0, math.cos(a)) - min(0, math.sin(a)))
-                / (abs(math.cos(a)) + abs(math.sin(a))), 0, 1)
+def gradient(c1, c2, p1, p2):
+    """Degradê linear de c1 (em p1) a c2 (em p2), coordenadas em px de 1024."""
+    yy, xx = np.mgrid[0:W, 0:W].astype(np.float32)
+    x1, y1, x2, y2 = px(p1[0]), px(p1[1]), px(p2[0]), px(p2[1])
+    dx, dy = x2 - x1, y2 - y1
+    t = np.clip(((xx - x1) * dx + (yy - y1) * dy) / (dx * dx + dy * dy), 0, 1)
     c1, c2 = np.array(c1, np.float32), np.array(c2, np.float32)
     rgb = c1 * (1 - t[..., None]) + c2 * t[..., None]
-    return Image.fromarray(np.dstack([rgb, np.full((size, size), 255)]).astype(np.uint8), "RGBA")
+    return Image.fromarray(np.dstack([rgb, np.full((W, W), 255)]).astype(np.uint8), "RGBA")
+
+
+def layer(color_img, mask, alpha=1.0):
+    out = color_img.copy()
+    out.putalpha(mask.point(lambda a: int(a * alpha)))
+    return out
+
+
+def soft_shadow(mask, offset_y, blur, opacity, color=(0, 0, 0)):
+    shadow = Image.new("RGBA", (W, W), color + (0,))
+    shifted = Image.new("L", (W, W), 0)
+    shifted.paste(mask, (0, px(offset_y)))
+    shadow.putalpha(shifted.filter(ImageFilter.GaussianBlur(px(blur))).point(lambda a: int(a * opacity)))
+    return shadow
 
 
 canvas = Image.new("RGBA", (W, W), (0, 0, 0, 0))
 
-# --- corpo: squircle claro (vidro) com sombra de chão ----------------------
+# --- corpo claro ------------------------------------------------------------
 body_box = (px(100), px(100), px(924), px(924))
-body_mask = squircle_mask(W, body_box)
+body_mask = squircle_mask(body_box)
+canvas = Image.alpha_composite(canvas, soft_shadow(body_mask, 12, 20, 0.30))
+body = gradient((255, 255, 255), (228, 231, 236), (512, 100), (512, 924))
+canvas = Image.alpha_composite(canvas, layer(body, body_mask))
 
-shadow = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-shadow.putalpha(body_mask.point(lambda a: int(a * 0.32)))
-shadow = shadow.transform(shadow.size, Image.AFFINE, (1, 0, 0, 0, 1, -px(14)))
-shadow = shadow.filter(ImageFilter.GaussianBlur(px(22)))
-canvas = Image.alpha_composite(canvas, shadow)
+# --- círculo quente (marca-texto): amarelo → laranja -------------------------
+circle_mask = Image.new("L", (W, W), 0)
+ImageDraw.Draw(circle_mask).ellipse([px(212), px(408), px(612), px(808)], fill=255)
+canvas = Image.alpha_composite(canvas, soft_shadow(circle_mask, 14, 22, 0.22, (120, 60, 0)))
+circle = gradient((255, 214, 64), (255, 112, 67), (412, 410), (412, 806))
+canvas = Image.alpha_composite(canvas, layer(circle, circle_mask))
+# brilho suave no alto do círculo
+gloss = Image.new("L", (W, W), 0)
+ImageDraw.Draw(gloss).ellipse([px(262), px(430), px(520), px(600)], fill=120)
+gloss = ImageChops.multiply(gloss.filter(ImageFilter.GaussianBlur(px(40))), circle_mask)
+canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), gloss))
 
-body = linear_gradient(W, (255, 255, 255), (226, 233, 242), 90)
-glow = Image.new("L", (W, W), 0)
-ImageDraw.Draw(glow).ellipse([px(80), px(20), px(760), px(560)], fill=110)
-glow = glow.filter(ImageFilter.GaussianBlur(px(90)))
-white = Image.new("RGBA", (W, W), (255, 255, 255, 255))
-body = Image.composite(white, body, glow)
-body.putalpha(body_mask)
-canvas = Image.alpha_composite(canvas, body)
-
-# --- cartão inclinado: degradê azul → turquesa -----------------------------
-card_size = px(560)
-card = linear_gradient(card_size, (44, 120, 255), (24, 214, 206), 45)
-card_mask = Image.new("L", (card_size, card_size), 0)
-ImageDraw.Draw(card_mask).rounded_rectangle(
-    [0, 0, card_size - 1, card_size - 1], radius=px(118), fill=255
+# --- cartão de vidro azul, translúcido, por cima do círculo ------------------
+card_box = [px(420), px(222), px(812), px(614)]
+card_mask = Image.new("L", (W, W), 0)
+ImageDraw.Draw(card_mask).rounded_rectangle(card_box, radius=px(92), fill=255)
+canvas = Image.alpha_composite(canvas, soft_shadow(card_mask, 16, 26, 0.20, (0, 60, 140)))
+# o que fica atrás do cartão aparece desfocado (vidro)
+behind = canvas.filter(ImageFilter.GaussianBlur(px(6)))
+canvas = Image.composite(behind, canvas, card_mask)
+card = gradient((92, 220, 255), (36, 140, 255), (440, 230), (800, 610))
+canvas = Image.alpha_composite(canvas, layer(card, card_mask, 0.66))
+# reflexo no topo e aro claro
+sheen = Image.new("L", (W, W), 0)
+ImageDraw.Draw(sheen).ellipse([px(380), px(120), px(880), px(420)], fill=90)
+sheen = ImageChops.multiply(sheen.filter(ImageFilter.GaussianBlur(px(36))), card_mask)
+canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), sheen))
+inner = Image.new("L", (W, W), 0)
+ImageDraw.Draw(inner).rounded_rectangle(
+    [card_box[0] + px(4), card_box[1] + px(4), card_box[2] - px(4), card_box[3] - px(4)],
+    radius=px(88), fill=255,
 )
-card.putalpha(card_mask)
-
-# brilho de vidro no topo do cartão
-sheen = Image.new("RGBA", (card_size, card_size), (255, 255, 255, 0))
-sheen_mask = Image.new("L", (card_size, card_size), 0)
-ImageDraw.Draw(sheen_mask).ellipse([-px(120), -px(360), px(680), px(240)], fill=70)
-sheen_mask = ImageChops.multiply(sheen_mask.filter(ImageFilter.GaussianBlur(px(30))), card_mask)
-sheen.putalpha(sheen_mask)
-card = Image.alpha_composite(card, sheen)
-
-# faixa de marca-texto amarela atravessando o cartão
-hl = Image.new("RGBA", (card_size, card_size), (0, 0, 0, 0))
-ImageDraw.Draw(hl).rounded_rectangle(
-    [px(80), px(370), px(400), px(440)], radius=px(22), fill=(255, 226, 50, 235)
-)
-hl.putalpha(ImageChops.multiply(hl.getchannel("A"), card_mask))
-card = Image.alpha_composite(card, hl)
+rim = ImageChops.subtract(card_mask, inner)
+canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), rim, 0.55))
 
 
-def scribble_points(n=1400):
-    """Cicloide alongada: um traço contínuo com laços, subindo de leve."""
+# --- rabisco de tinta com volume ----------------------------------------------
+def scribble():
+    """Traço cursivo com laços (cicloide alongada), pontas afinando."""
     pts = []
-    loops = 2.5
-    k = 2.3
+    n, loops, k = 1600, 2.3, 2.1
     for i in range(n + 1):
         t = i / n
         u = t * loops * 2 * math.pi
         x = (u - k * math.sin(u)) / (loops * 2 * math.pi)
-        y = -k * math.cos(u) * 0.075 - t * 0.10
-        pts.append((px(95) + x * px(370), px(250) + y * px(400)))
+        y = -k * math.cos(u) * 0.085 - t * 0.12
+        # grossura: fina nas pontas, cheia no meio
+        width = 0.35 + 0.65 * math.sin(math.pi * min(1, t * 1.15)) ** 0.6
+        pts.append((px(232) + x * px(560), px(560) + y * px(520), width))
     return pts
 
 
-stroke = Image.new("L", (card_size, card_size), 0)
-sd = ImageDraw.Draw(stroke)
-radius = px(17)
-for x, y in scribble_points():
-    sd.ellipse([x - radius, y - radius, x + radius, y + radius], fill=255)
+def stroke_mask(points, radius, dx=0, dy=0):
+    mask = Image.new("L", (W, W), 0)
+    d = ImageDraw.Draw(mask)
+    for x, y, w in points:
+        r = radius * w
+        d.ellipse([x - r + px(dx), y - r + px(dy), x + r + px(dx), y + r + px(dy)], fill=255)
+    return mask
 
-stroke_shadow = Image.new("RGBA", (card_size, card_size), (8, 40, 120, 0))
-stroke_shadow.putalpha(stroke.point(lambda a: int(a * 0.45)))
-stroke_shadow = stroke_shadow.transform(
-    stroke_shadow.size, Image.AFFINE, (1, 0, 0, 0, 1, -px(10))
-).filter(ImageFilter.GaussianBlur(px(12)))
-card = Image.alpha_composite(card, stroke_shadow)
-stroke_layer = Image.new("RGBA", (card_size, card_size), (255, 255, 255, 0))
-stroke_layer.putalpha(stroke)
-card = Image.alpha_composite(card, stroke_layer)
 
-card = card.rotate(-9, resample=Image.BICUBIC, expand=True)
-cx = (W - card.width) // 2
-cy = (W - card.height) // 2 + px(6)
-
-# sombra num quadro do tamanho do ícone, para o desfoque não ser cortado
-card_shadow = Image.new("RGBA", (W, W), (20, 60, 140, 0))
-shadow_alpha = Image.new("L", (W, W), 0)
-shadow_alpha.paste(card.getchannel("A").point(lambda a: int(a * 0.38)), (cx, cy + px(22)))
-card_shadow.putalpha(shadow_alpha.filter(ImageFilter.GaussianBlur(px(26))))
-canvas = Image.alpha_composite(canvas, card_shadow)
-canvas.alpha_composite(card, (cx, cy))
+pts = scribble()
+ink = stroke_mask(pts, px(30))
+canvas = Image.alpha_composite(canvas, soft_shadow(ink, 14, 14, 0.35))
+canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (28, 28, 36, 255)), ink))
+# luz: um traço mais fino e claro deslocado para cima, recortado pela tinta
+highlight = ImageChops.multiply(stroke_mask(pts, px(12), dx=-5, dy=-9), ink)
+highlight = highlight.filter(ImageFilter.GaussianBlur(px(5)))
+canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (150, 150, 170, 255)), highlight, 0.75))
 
 # borda fina de vidro no corpo
-rim = Image.new("RGBA", (W, W), (255, 255, 255, 0))
-inner = squircle_mask(W, (body_box[0] + px(3), body_box[1] + px(3), body_box[2] - px(3), body_box[3] - px(3)))
-rim.putalpha(ImageChops.subtract(body_mask, inner).point(lambda a: int(a * 0.7)))
-canvas = Image.alpha_composite(canvas, rim)
+inner_body = squircle_mask((body_box[0] + px(3), body_box[1] + px(3), body_box[2] - px(3), body_box[3] - px(3)))
+canvas = Image.alpha_composite(
+    canvas,
+    layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), ImageChops.subtract(body_mask, inner_body), 0.8),
+)
 
 img = canvas.resize((S, S), Image.LANCZOS)
 
