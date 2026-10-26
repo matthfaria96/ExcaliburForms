@@ -2,6 +2,7 @@ import React from "react";
 
 import {
   COLOR_PALETTE,
+  DEFAULT_ELEMENT_STROKE_PICKS,
   DEFAULT_STICKY_NOTE_SIZE,
   KEYS,
   STICKY_NOTE_MIN_FONT_SIZE,
@@ -56,7 +57,7 @@ const { h } = window;
 const mouse = new Pointer("mouse");
 
 const LONG_TEXT = Array(40).fill("abcdefghijklmnopqrstuvwx").join("\n");
-const RED = COLOR_PALETTE.red[4];
+const RED = DEFAULT_ELEMENT_STROKE_PICKS[1];
 
 const getElement = <
   T extends

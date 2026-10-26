@@ -235,22 +235,24 @@ const COMMON_ELEMENT_SHADES = pick(COLOR_PALETTE, [
  * reorder) preserves it */
 export const COLOR_TOP_PICKS_SLOTS = 5;
 
-// ORDER matters for positioning in quick picker
+// ORDER matters for positioning in quick picker.
+// Saturated system-style colors so fills/strokes read as solid and vivid
+// (the pastel open-color tints looked washed out).
 export const DEFAULT_ELEMENT_STROKE_PICKS = [
   COLOR_PALETTE.black,
-  COLOR_PALETTE.red[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
-  COLOR_PALETTE.green[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
-  COLOR_PALETTE.blue[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
-  COLOR_PALETTE.yellow[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
+  "#ff3b30", // red
+  "#34c759", // green
+  "#007aff", // blue
+  "#ff9500", // orange
 ] as ColorTuple;
 
 // ORDER matters for positioning in quick picker
 export const DEFAULT_ELEMENT_BACKGROUND_PICKS = [
   COLOR_PALETTE.transparent,
-  COLOR_PALETTE.red[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.green[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.blue[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.yellow[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
+  "#ff5c52",
+  "#4ade80",
+  "#4d9bff",
+  "#ffcf3d",
 ] as ColorTuple;
 
 // ORDER matters for positioning in quick picker.
@@ -258,41 +260,40 @@ export const DEFAULT_ELEMENT_BACKGROUND_PICKS = [
 // bucket tool) swapped for white.
 export const BUCKET_FILL_BACKGROUND_PICKS = [
   COLOR_PALETTE.white,
-  COLOR_PALETTE.red[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.green[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.blue[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.yellow[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
+  "#ff5c52",
+  "#4ade80",
+  "#4d9bff",
+  "#ffcf3d",
 ] as ColorTuple;
 
 // sticky notes are their own color domain (own defaults, own picks)
-export const DEFAULT_STICKY_NOTE_BG = "#ffdf6b";
+export const DEFAULT_STICKY_NOTE_BG = "#ffd93d";
 
 export const STICKY_NOTE_STROKE_PICKS: ColorTuple =
   DEFAULT_ELEMENT_STROKE_PICKS;
 
-// ORDER matters for positioning in quick picker. Classic note colors; the
-// first one is `DEFAULT_STICKY_NOTE_BG`. Never transparent.
+// ORDER matters for positioning in quick picker. Vivid note colors; the first
+// one is `DEFAULT_STICKY_NOTE_BG`. Never transparent.
 export const STICKY_NOTE_BACKGROUND_PICKS = [
   DEFAULT_STICKY_NOTE_BG,
-  COLOR_PALETTE.pink[1],
-  COLOR_PALETTE.green[1],
-  COLOR_PALETTE.blue[1],
-  COLOR_PALETTE.orange[1],
+  "#ff6fa5", // pink
+  "#5ce65c", // green
+  "#4cc3ff", // blue
+  "#ffa14a", // orange
 ] as ColorTuple;
 
-// highlighted text (marker) is its own color domain too: vivid marker tones
-// (open-color 400) that still keep dark text legible. Never transparent
-// (that would hide the marker).
-export const DEFAULT_HIGHLIGHT_BG = COLOR_PALETTE.yellow[2];
+// highlighted text (marker) is its own color domain: vivid highlighter tones.
+// Never transparent (that would hide the marker).
+export const DEFAULT_HIGHLIGHT_BG = "#ffe600";
 
 // ORDER matters for positioning in quick picker: yellow, cyan, green, pink,
 // purple; the first one is `DEFAULT_HIGHLIGHT_BG`.
 export const HIGHLIGHT_BACKGROUND_PICKS = [
   DEFAULT_HIGHLIGHT_BG,
-  COLOR_PALETTE.cyan[2],
-  COLOR_PALETTE.green[2],
-  COLOR_PALETTE.pink[2],
-  COLOR_PALETTE.violet[2],
+  "#00e5ff", // cyan
+  "#00e676", // green
+  "#ff4fd8", // pink
+  "#b45cff", // purple
 ] as ColorTuple;
 
 // ORDER matters for positioning in quick picker

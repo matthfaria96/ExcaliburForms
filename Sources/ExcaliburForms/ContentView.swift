@@ -119,8 +119,8 @@ struct ContentView: View {
                 }
             }
         }
-        .padding(14)
-        .frame(width: 220, alignment: .leading)
+        .padding(16)
+        .frame(width: 240, alignment: .leading)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
@@ -212,14 +212,16 @@ struct ContentView: View {
         Button(action: action) {
             ZStack {
                 Circle().fill(Color(hexString: hex))
-                Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+                Circle().strokeBorder(Color.black.opacity(0.10), lineWidth: 1)
                 if selected {
+                    Circle().strokeBorder(Color.white, lineWidth: 2).padding(1)
                     Circle().strokeBorder(Color.accentColor, lineWidth: 2)
                 }
             }
-            .frame(width: 20, height: 20)
+            .frame(width: 22, height: 22)
         }
         .buttonStyle(.plain)
+        .help(hex)
     }
 
     private func sizeButton(_ size: Double, current: Double) -> some View {
@@ -228,7 +230,7 @@ struct ContentView: View {
         } label: {
             Text(TextSelection.sizeLabels[size] ?? "?")
                 .font(.system(size: 11, weight: .semibold))
-                .frame(width: 32, height: 26)
+                .frame(width: 34, height: 28)
                 .background(chipBackground(current == size))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
@@ -242,7 +244,7 @@ struct ContentView: View {
             Text(label)
                 .font(.system(size: 11, weight: weight == "bold" ? .bold : .regular))
                 .frame(maxWidth: .infinity)
-                .frame(height: 26)
+                .frame(height: 28)
                 .background(chipBackground(current == weight))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
@@ -256,7 +258,7 @@ struct ContentView: View {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .medium))
                 .frame(maxWidth: .infinity)
-                .frame(height: 26)
+                .frame(height: 28)
                 .background(chipBackground(current == align))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }

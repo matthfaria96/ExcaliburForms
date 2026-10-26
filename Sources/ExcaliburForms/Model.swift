@@ -184,14 +184,14 @@ struct HighlightColor: Identifiable, Equatable {
     var id: String { hex }
 
     static let options: [HighlightColor] = [
-        HighlightColor(hex: "#ffd43b", name: "Amarelo"),
-        HighlightColor(hex: "#3bc9db", name: "Ciano"),
-        HighlightColor(hex: "#69db7c", name: "Verde"),
-        HighlightColor(hex: "#f783ac", name: "Rosa"),
-        HighlightColor(hex: "#9775fa", name: "Violeta"),
+        HighlightColor(hex: "#ffe600", name: "Amarelo"),
+        HighlightColor(hex: "#00e5ff", name: "Ciano"),
+        HighlightColor(hex: "#00e676", name: "Verde"),
+        HighlightColor(hex: "#ff4fd8", name: "Rosa"),
+        HighlightColor(hex: "#b45cff", name: "Roxo"),
     ]
 
-    static let defaultHex = "#ffd43b"
+    static let defaultHex = "#ffe600"
 }
 
 /// Cor padrão do texto (a cor do traço que a ferramenta texto usa).
@@ -202,15 +202,15 @@ struct TextColor: Identifiable, Equatable {
 
     static let options: [TextColor] = [
         TextColor(hex: "#1e1e1e", name: "Preto"),
-        TextColor(hex: "#868e96", name: "Cinza"),
-        TextColor(hex: "#fa5252", name: "Vermelho"),
-        TextColor(hex: "#fd7e14", name: "Laranja"),
-        TextColor(hex: "#fab005", name: "Amarelo"),
-        TextColor(hex: "#40c057", name: "Verde"),
-        TextColor(hex: "#15aabf", name: "Ciano"),
-        TextColor(hex: "#228be6", name: "Azul"),
-        TextColor(hex: "#7950f2", name: "Violeta"),
-        TextColor(hex: "#e64980", name: "Rosa"),
+        TextColor(hex: "#8e8e93", name: "Cinza"),
+        TextColor(hex: "#ff3b30", name: "Vermelho"),
+        TextColor(hex: "#ff9500", name: "Laranja"),
+        TextColor(hex: "#ffcc00", name: "Amarelo"),
+        TextColor(hex: "#34c759", name: "Verde"),
+        TextColor(hex: "#32ade6", name: "Ciano"),
+        TextColor(hex: "#007aff", name: "Azul"),
+        TextColor(hex: "#af52de", name: "Roxo"),
+        TextColor(hex: "#ff2d55", name: "Rosa"),
     ]
 
     static let defaultHex = "#1e1e1e"
@@ -254,11 +254,11 @@ struct StickyColor: Identifiable, Equatable {
     var id: String { hex }
 
     static let options: [StickyColor] = [
-        StickyColor(hex: "#ffd43b", name: "Amarelo"),
-        StickyColor(hex: "#f783ac", name: "Rosa"),
-        StickyColor(hex: "#69db7c", name: "Verde"),
-        StickyColor(hex: "#4dabf7", name: "Azul"),
-        StickyColor(hex: "#ffa94d", name: "Laranja"),
+        StickyColor(hex: "#ffd93d", name: "Amarelo"),
+        StickyColor(hex: "#ff6fa5", name: "Rosa"),
+        StickyColor(hex: "#5ce65c", name: "Verde"),
+        StickyColor(hex: "#4cc3ff", name: "Azul"),
+        StickyColor(hex: "#ffa14a", name: "Laranja"),
     ]
 }
 
