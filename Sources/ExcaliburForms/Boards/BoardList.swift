@@ -20,6 +20,7 @@ struct BoardList: View {
             }
         }
         .navigationTitle("Quadros")
+        .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom) { bottomBar }
         .confirmationDialog(
             "Excluir quadro",
@@ -76,7 +77,8 @@ struct BoardList: View {
             } label: {
                 Label("Novo quadro", systemImage: "plus")
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
 
             Spacer()
 

@@ -131,31 +131,19 @@ describe("autosave", () => {
 });
 
 describe("tools", () => {
-  it("maps the text tool to text or marker by the preset", () => {
+  it("reports the text tool as a single tool regardless of the marker", () => {
     const base = getDefaultAppState();
     const text = { type: "text" as const, customType: null };
+    expect(getActiveToolId({ activeTool: text })).toBe("text");
+    expect(getActiveToolId({ activeTool: base.activeTool })).toBe("selection");
     expect(
-      getActiveToolId({ activeTool: text, currentItemTextHighlight: false }),
-    ).toBe("text");
-    expect(
-      getActiveToolId({ activeTool: text, currentItemTextHighlight: true }),
-    ).toBe("highlight");
-    expect(
-      getActiveToolId({
-        activeTool: base.activeTool,
-        currentItemTextHighlight: false,
-      }),
-    ).toBe("selection");
-    expect(
-      getActiveToolId({
-        activeTool: { type: "laser", customType: null },
-        currentItemTextHighlight: false,
-      }),
+      getActiveToolId({ activeTool: { type: "laser", customType: null } }),
     ).toBe(null);
   });
 
   it("only accepts toolbar tools", () => {
-    expect(isToolId("highlight")).toBe(true);
+    expect(isToolId("text")).toBe(true);
+    expect(isToolId("highlight")).toBe(false);
     expect(isToolId("frame")).toBe(false);
     expect(isToolId(3)).toBe(false);
   });

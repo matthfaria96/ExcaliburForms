@@ -280,18 +280,19 @@ export const STICKY_NOTE_BACKGROUND_PICKS = [
   COLOR_PALETTE.orange[1],
 ] as ColorTuple;
 
-// highlighted text (marker) is its own color domain too: soft marker tones
-// that keep dark text legible. Never transparent (that would hide the marker).
-export const DEFAULT_HIGHLIGHT_BG = COLOR_PALETTE.yellow[1];
+// highlighted text (marker) is its own color domain too: vivid marker tones
+// (open-color 400) that still keep dark text legible. Never transparent
+// (that would hide the marker).
+export const DEFAULT_HIGHLIGHT_BG = COLOR_PALETTE.yellow[2];
 
 // ORDER matters for positioning in quick picker: yellow, green, blue, pink,
 // purple; the first one is `DEFAULT_HIGHLIGHT_BG`.
 export const HIGHLIGHT_BACKGROUND_PICKS = [
   DEFAULT_HIGHLIGHT_BG,
-  COLOR_PALETTE.green[1],
-  COLOR_PALETTE.blue[1],
-  COLOR_PALETTE.pink[1],
-  COLOR_PALETTE.violet[1],
+  COLOR_PALETTE.green[2],
+  COLOR_PALETTE.blue[2],
+  COLOR_PALETTE.pink[2],
+  COLOR_PALETTE.violet[2],
 ] as ColorTuple;
 
 // ORDER matters for positioning in quick picker

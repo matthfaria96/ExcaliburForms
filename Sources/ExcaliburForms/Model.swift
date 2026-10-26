@@ -7,7 +7,6 @@ enum Tool: String, CaseIterable, Identifiable, Sendable {
     case hand
     case image
     case text
-    case highlight
     case stickynote
     case rectangle
     case ellipse
@@ -25,7 +24,6 @@ enum Tool: String, CaseIterable, Identifiable, Sendable {
         case .hand: return "Mão"
         case .image: return "Imagem"
         case .text: return "Texto"
-        case .highlight: return "Marca-texto"
         case .stickynote: return "Nota"
         case .rectangle: return "Retângulo"
         case .ellipse: return "Elipse"
@@ -43,7 +41,6 @@ enum Tool: String, CaseIterable, Identifiable, Sendable {
         case .hand: return "hand.raised"
         case .image: return "photo"
         case .text: return "textformat"
-        case .highlight: return "highlighter"
         case .stickynote: return "note.text"
         case .rectangle: return "rectangle"
         case .ellipse: return "circle"
@@ -52,6 +49,24 @@ enum Tool: String, CaseIterable, Identifiable, Sendable {
         case .line: return "line.diagonal"
         case .freedraw: return "scribble"
         case .eraser: return "eraser"
+        }
+    }
+
+    /// Atalho do editor (exibido na dica de ferramenta), ou `nil` sem atalho.
+    var shortcut: String? {
+        switch self {
+        case .selection: return "V"
+        case .hand: return "H"
+        case .image: return nil
+        case .text: return "T"
+        case .stickynote: return "N"
+        case .rectangle: return "R"
+        case .ellipse: return "O"
+        case .diamond: return "D"
+        case .arrow: return "A"
+        case .line: return "L"
+        case .freedraw: return "P"
+        case .eraser: return nil
         }
     }
 }

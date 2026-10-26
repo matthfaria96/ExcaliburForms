@@ -8,6 +8,7 @@ struct ContentView: View {
     @EnvironmentObject private var editor: EditorController
 
     @AppStorage("appearance") private var appearance: Appearance = .system
+    @State private var shapesHovering = false
 
     var body: some View {
         NavigationSplitView {
@@ -46,32 +47,42 @@ struct ContentView: View {
     }
 
     private var toolsBar: some View {
-        HStack(spacing: 2) {
-            toolButton(.selection)
-            toolButton(.hand)
-            Divider()
-            toolButton(.image)
-            toolButton(.text)
-            toolButton(.highlight)
-            toolButton(.stickynote)
-            Divider()
+        HStack(spacing: 4) {
+            ToolButton(tool: .selection, isActive: editor.activeTool == .selection) {
+                editor.setTool(.selection)
+            }
+            ToolButton(tool: .hand, isActive: editor.activeTool == .hand) {
+                editor.setTool(.hand)
+            }
+            separator
+            ToolButton(tool: .image, isActive: editor.activeTool == .image) {
+                editor.setTool(.image)
+            }
+            ToolButton(tool: .text, isActive: editor.activeTool == .text) {
+                editor.setTool(.text)
+            }
+            ToolButton(tool: .stickynote, isActive: editor.activeTool == .stickynote) {
+                editor.setTool(.stickynote)
+            }
+            separator
             shapesMenu
-            toolButton(.arrow)
-            toolButton(.freedraw)
+            ToolButton(tool: .arrow, isActive: editor.activeTool == .arrow) {
+                editor.setTool(.arrow)
+            }
+            ToolButton(tool: .freedraw, isActive: editor.activeTool == .freedraw) {
+                editor.setTool(.freedraw)
+            }
         }
     }
 
-    private func toolButton(_ tool: Tool) -> some View {
-        Button {
-            editor.setTool(tool)
-        } label: {
-            Image(systemName: tool.systemImage)
-                .frame(minWidth: 24)
-        }
-        .help(tool.label)
-        .buttonStyle(.borderless)
-        .background(editor.activeTool == tool ? Color.accentColor.opacity(0.25) : Color.clear)
-        .clipShape(RoundedRectangle(cornerRadius: 5))
+    private var separator: some View {
+        Divider()
+            .frame(height: 16)
+            .padding(.horizontal, 3)
+    }
+
+    private var shapesActive: Bool {
+        [Tool.rectangle, .ellipse, .diamond, .line].contains(editor.activeTool ?? .selection)
     }
 
     private var shapesMenu: some View {
@@ -85,11 +96,31 @@ struct ContentView: View {
             }
         } label: {
             Image(systemName: "square.on.circle")
-                .frame(minWidth: 24)
+                .font(.system(size: 13, weight: .medium))
+                .frame(width: 30, height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(shapesBackground)
+                )
+                .foregroundStyle(shapesActive ? Color.accentColor : .secondary)
+                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
-        .help("Formas")
+        .buttonStyle(.plain)
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .onHover { shapesHovering = $0 }
         .fixedSize()
+        .help("Formas")
+    }
+
+    private var shapesBackground: Color {
+        if shapesActive {
+            return Color.accentColor.opacity(0.2)
+        }
+        if shapesHovering {
+            return Color.primary.opacity(0.07)
+        }
+        return .clear
     }
 
     private var exportMenu: some View {
@@ -111,6 +142,8 @@ struct ContentView: View {
         } label: {
             Image(systemName: "square.and.arrow.up")
         }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
         .help("Exportar")
     }
 
@@ -130,6 +163,8 @@ struct ContentView: View {
         } label: {
             Image(systemName: appearanceSymbol)
         }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
         .help("Aparência")
     }
 
@@ -170,5 +205,50 @@ struct ContentView: View {
             get: { editor.lastError != nil },
             set: { if !$0 { editor.lastError = nil } }
         )
+    }
+}
+
+// MARK: - Botão de ferramenta
+
+/// Botão de ferramenta da barra nativa: discreto, com hover e estado ativo.
+private struct ToolButton: View {
+    let tool: Tool
+    let isActive: Bool
+    let action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: tool.systemImage)
+                .font(.system(size: 13, weight: .medium))
+                .frame(width: 30, height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(background)
+                )
+                .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(helpText)
+    }
+
+    private var background: Color {
+        if isActive {
+            return Color.accentColor.opacity(0.2)
+        }
+        if hovering {
+            return Color.primary.opacity(0.07)
+        }
+        return .clear
+    }
+
+    private var helpText: String {
+        if let shortcut = tool.shortcut {
+            return "\(tool.label)  (\(shortcut))"
+        }
+        return tool.label
     }
 }

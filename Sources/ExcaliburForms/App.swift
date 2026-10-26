@@ -25,6 +25,7 @@ struct ExcaliburFormsApp: App {
                 }
         }
         .windowStyle(.automatic)
+        .defaultSize(width: 1200, height: 760)
         .commands {
             boardCommands
             layerCommands
