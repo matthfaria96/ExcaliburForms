@@ -25,6 +25,9 @@ import {
   invariant,
   applyDarkModeFilter,
   isSafari,
+  DEFAULT_HIGHLIGHT_BG,
+  getReadableTextColor,
+  isTransparent,
   STICKY_NOTE_EDGE_SHADOW_OPACITY,
   STICKY_NOTE_EDGE_SHADOW_WIDTH,
   STICKY_NOTE_FOOTER,
@@ -70,6 +73,7 @@ import {
   isMagicFrameElement,
   isFrameLikeElement,
   isImageElement,
+  isStickyNoteElement,
 } from "./typeChecks";
 import { getContainingFrame } from "./frame";
 import { getCornerRadius } from "./utils";
@@ -325,7 +329,7 @@ const generateElementCanvas = (
 
   const rc = rough.canvas(canvas);
 
-  drawElementOnCanvas(element, rc, context, renderConfig);
+  drawElementOnCanvas(element, elementsMap, rc, context, renderConfig);
 
   context.restore();
 
@@ -460,6 +464,7 @@ export const withSavedContext = (
 
 const drawElementOnCanvas = (
   element: NonDeletedExcalidrawElement,
+  elementsMap: RenderableElementsMap,
   rc: RoughCanvas,
   context: CanvasRenderingContext2D,
   renderConfig: StaticCanvasRenderConfig,
@@ -680,7 +685,9 @@ const drawElementOnCanvas = (
           );
           if (highlightRects.length) {
             // the marker keeps its vivid color in both themes
-            context.fillStyle = element.backgroundColor;
+            context.fillStyle = isTransparent(element.backgroundColor)
+              ? DEFAULT_HIGHLIGHT_BG
+              : element.backgroundColor;
             for (const rect of highlightRects) {
               context.beginPath();
               if (typeof context.roundRect === "function") {
@@ -698,13 +705,31 @@ const drawElementOnCanvas = (
             }
           }
           context.font = getFontString(element);
-          // marked text stays dark so it reads on the vivid marker in both themes
-          context.fillStyle = element.highlighted
-            ? element.strokeColor
-            : applyDarkModeFilter(
-                element.strokeColor,
-                renderConfig.theme === THEME.DARK,
-              );
+          const isLabel = !!element.containerId;
+          const labelContainer = isLabel
+            ? elementsMap.get(element.containerId!)
+            : null;
+          if (labelContainer && isStickyNoteElement(labelContainer)) {
+            // a note's text always reads in black
+            context.fillStyle = "#1e1e1e";
+          } else if (element.customData?.frameName) {
+            context.fillStyle = element.strokeColor;
+          } else if (!isLabel) {
+            // free text keeps its hue but is darkened/lightened until it reads
+            // on the marker (e.g. yellow text on a yellow marker)
+            const markerColor = isTransparent(element.backgroundColor)
+              ? DEFAULT_HIGHLIGHT_BG
+              : element.backgroundColor;
+            context.fillStyle = getReadableTextColor(
+              element.strokeColor,
+              markerColor,
+            );
+          } else {
+            context.fillStyle = applyDarkModeFilter(
+              element.strokeColor,
+              renderConfig.theme === THEME.DARK,
+            );
+          }
           context.textAlign = element.textAlign as CanvasTextAlign;
 
           // Canvas does not support multiline text by default
@@ -1154,7 +1179,7 @@ const drawElement = (
           context.translate(cx, cy);
           context.rotate(element.angle);
           context.translate(-shiftX, -shiftY);
-          drawElementOnCanvas(element, rc, context, renderConfig);
+          drawElementOnCanvas(element, elementsMap, rc, context, renderConfig);
         });
       } else {
         const elementWithCanvas = generateElementWithCanvas(
@@ -1259,7 +1284,7 @@ const drawElement = (
               context.clip("evenodd");
               context.rotate(element.angle);
               context.translate(-shiftX, -shiftY);
-              drawElementOnCanvas(element, rc, context, renderConfig);
+              drawElementOnCanvas(element, elementsMap, rc, context, renderConfig);
             });
           } else {
             context.rotate(element.angle);
@@ -1270,7 +1295,7 @@ const drawElement = (
             }
 
             context.translate(-shiftX, -shiftY);
-            drawElementOnCanvas(element, rc, context, renderConfig);
+            drawElementOnCanvas(element, elementsMap, rc, context, renderConfig);
           }
         });
         // not exporting → optimized rendering (cache & render from element

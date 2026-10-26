@@ -1,4 +1,4 @@
-import { getFontString, isTransparent } from "@excalidraw/common";
+import { getFontString } from "@excalidraw/common";
 
 import { getLineHeightInPx, getLineWidth } from "./textMeasurements";
 
@@ -22,9 +22,9 @@ export type TextHighlightRect = Readonly<{
 
 /** Whether a text element paints a marker stroke behind its lines. */
 export const isHighlightedText = (element: ExcalidrawTextElement) =>
-  element.highlighted === true &&
-  !element.containerId &&
-  !isTransparent(element.backgroundColor);
+  // free text always carries a marker (labels belong to their container, and
+  // the frame-name helper text is not user text)
+  !element.containerId && !element.customData?.frameName;
 
 /**
  * Marker rectangles behind each non-empty line, in the element's local

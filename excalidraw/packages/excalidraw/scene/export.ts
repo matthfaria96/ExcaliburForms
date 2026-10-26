@@ -14,7 +14,6 @@ import {
   getFontString,
   toBrandedType,
   applyDarkModeFilter,
-  removeDarkModeFilter,
 } from "@excalidraw/common";
 
 import { getCommonBounds, getElementAbsoluteCoords } from "@excalidraw/element";
@@ -150,15 +149,14 @@ const addFrameLabelsAsTextElements = (
             FRAME_STYLE.nameLineHeight as ExcalidrawTextElement["lineHeight"],
           strokeColor:
             opts.theme === THEME.DARK
-              ? // the renderer applies the dark mode filter to element
-                // colors, so revert it upfront to end up with the color
-                // the editor uses for frame names
-                removeDarkModeFilter(FRAME_STYLE.nameColorDarkTheme)
+              ? FRAME_STYLE.nameColorDarkTheme
               : FRAME_STYLE.nameColorLightTheme,
           text: getFrameLikeTitle(element),
           renderEnvironment: opts.renderEnvironment,
         });
       textElement.y -= textElement.height;
+      // auxiliary text: it must not get the marker treatment
+      textElement.customData = { frameName: true };
 
       textElement = truncateText(
         textElement,

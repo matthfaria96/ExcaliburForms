@@ -121,6 +121,33 @@ export const applyDarkModeFilter = (color: string, enable = true): string => {
   return result;
 };
 
+/**
+ * Returns a text color that stays readable on `backgroundColor`. It keeps the
+ * text hue when possible, darkening/lightening it until the WCAG contrast is
+ * enough (e.g. yellow text on a yellow marker becomes darker).
+ */
+export const getReadableTextColor = (
+  textColor: string,
+  backgroundColor: string,
+): string => {
+  const bg = tinycolor(backgroundColor);
+  if (!bg.isValid() || bg.getAlpha() === 0) {
+    return textColor;
+  }
+  let fg = tinycolor(textColor);
+  if (!fg.isValid()) {
+    return textColor;
+  }
+  const target = bg.isLight() ? "#000000" : "#ffffff";
+  for (let i = 0; i < 12; i++) {
+    if (tinycolor.readability(fg, bg) >= 4.5) {
+      return fg.toHexString();
+    }
+    fg = tinycolor.mix(fg, target, 12);
+  }
+  return target;
+};
+
 const _reverseDarkModeInvert = (
   r: number,
   g: number,

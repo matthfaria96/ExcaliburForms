@@ -202,7 +202,6 @@ struct TextColor: Identifiable, Equatable {
 
     static let options: [TextColor] = [
         TextColor(hex: "#1e1e1e", name: "Preto"),
-        TextColor(hex: "#8e8e93", name: "Cinza"),
         TextColor(hex: "#ff3b30", name: "Vermelho"),
         TextColor(hex: "#ff9500", name: "Laranja"),
         TextColor(hex: "#ffcc00", name: "Amarelo"),

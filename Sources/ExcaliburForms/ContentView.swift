@@ -115,17 +115,6 @@ struct ContentView: View {
                 barDivider
                 barGroup("Marca-texto") {
                     HStack(spacing: 6) {
-                        Button {
-                            editor.performAction("toggleTextHighlight", value: false)
-                        } label: {
-                            Image(systemName: "line.diagonal")
-                                .font(.system(size: 11, weight: .semibold))
-                                .frame(width: 28, height: 22)
-                                .background(chipBackground(editor.highlightColor == nil))
-                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                        .help("Sem grifo")
                         ForEach(HighlightColor.options) { option in
                             colorDot(option.hex, selected: editor.highlightColor == option.hex) {
                                 editor.performAction("toggleTextHighlight", value: true)
@@ -397,12 +386,6 @@ struct ContentView: View {
     /// abre o seletor (desligado, amarelo, ciano, verde, rosa, violeta).
     private var highlightSwatch: some View {
         Menu {
-            Button {
-                editor.setHighlight(nil)
-            } label: {
-                Label("Sem grifo", systemImage: "line.diagonal")
-            }
-            Divider()
             ForEach(HighlightColor.options) { option in
                 Button {
                     editor.setHighlight(option.hex)

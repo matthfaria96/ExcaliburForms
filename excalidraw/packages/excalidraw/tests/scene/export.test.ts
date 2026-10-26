@@ -1,8 +1,10 @@
 import {
   applyDarkModeFilter,
   BOUND_TEXT_PADDING,
+  DEFAULT_HIGHLIGHT_BG,
   FONT_FAMILY,
   FRAME_STYLE,
+  getReadableTextColor,
   THEME,
 } from "@excalidraw/common";
 
@@ -148,9 +150,9 @@ describe("exportToSvg", () => {
     expect(textElements.length).toBeGreaterThan(0);
 
     textElements.forEach((textEl) => {
-      // fill color should be inverted in dark mode
+      // free text keeps its hue but is adjusted to read on the marker
       expect(textEl.getAttribute("fill")).toBe(
-        applyDarkModeFilter(textFixture.strokeColor),
+        getReadableTextColor(textFixture.strokeColor, DEFAULT_HIGHLIGHT_BG),
       );
     });
   });

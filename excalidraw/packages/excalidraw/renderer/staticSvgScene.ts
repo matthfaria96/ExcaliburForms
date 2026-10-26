@@ -10,6 +10,9 @@ import {
   isTestEnv,
   getVerticalOffset,
   applyDarkModeFilter,
+  DEFAULT_HIGHLIGHT_BG,
+  getReadableTextColor,
+  isTransparent,
   MIME_TYPES,
   STICKY_NOTE_EDGE_SHADOW_OPACITY,
   STICKY_NOTE_EDGE_SHADOW_WIDTH,
@@ -815,7 +818,12 @@ const renderElementToSvg = (
           marker.setAttribute("width", `${rect.width}`);
           marker.setAttribute("height", `${rect.height}`);
           marker.setAttribute("rx", `${rect.radius}`);
-          marker.setAttribute("fill", element.backgroundColor);
+          marker.setAttribute(
+            "fill",
+            isTransparent(element.backgroundColor)
+              ? DEFAULT_HIGHLIGHT_BG
+              : element.backgroundColor,
+          );
           node.appendChild(marker);
         }
         const direction = isRTL(element.text) ? "rtl" : "ltr";
@@ -837,11 +845,18 @@ const renderElementToSvg = (
           }
           text.setAttribute(
             "fill",
-            element.highlighted
+            element.customData?.frameName
               ? element.strokeColor
-              : applyDarkModeFilter(
+              : element.containerId
+              ? applyDarkModeFilter(
                   element.strokeColor,
                   renderConfig.theme === THEME.DARK,
+                )
+              : getReadableTextColor(
+                  element.strokeColor,
+                  isTransparent(element.backgroundColor)
+                    ? DEFAULT_HIGHLIGHT_BG
+                    : element.backgroundColor,
                 ),
           );
           text.setAttribute("text-anchor", textAnchor);

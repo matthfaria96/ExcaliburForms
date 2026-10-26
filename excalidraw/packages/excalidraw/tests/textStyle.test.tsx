@@ -77,14 +77,14 @@ describe("font weight", () => {
 });
 
 describe("text highlight geometry", () => {
-  it("only marks free, non-transparent highlighted text", () => {
+  it("marks every free text, never labels", () => {
     expect(isHighlightedText(textElement())).toBe(true);
-    expect(isHighlightedText(textElement({ highlighted: false }))).toBe(false);
+    expect(isHighlightedText(textElement({ highlighted: false }))).toBe(true);
     expect(
       isHighlightedText(
         textElement({ backgroundColor: COLOR_PALETTE.transparent }),
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isHighlightedText(
         textElement({ containerId: "container" as ExcalidrawTextElement["id"] }),

@@ -782,21 +782,19 @@ export class AppText {
         ? topLayerFrame.id
         : null;
 
-    // the marker belongs to free text only (labels have their container)
+    // every free text always carries a marker (labels have their container)
     const isHighlighted =
-      this.app.state.currentItemTextHighlight &&
-      !(shouldBindToContainer && container) &&
-      !arrowEndpointBinding;
+      !(shouldBindToContainer && container) && !arrowEndpointBinding;
 
     const element =
       existingTextElement ||
       newTextElement({
         x: newTextElementPosition.x,
         y: newTextElementPosition.y,
-        // a note's stroke color is its text color: the label inherits it
+        // a note's text always reads in black; free text uses the text color
         strokeColor:
           shouldBindToContainer && isStickyNoteElement(container)
-            ? container.strokeColor
+            ? "#1e1e1e"
             : this.app.state.currentItemStrokeColor,
         backgroundColor: isHighlighted
           ? this.app.state.currentItemHighlightColor
