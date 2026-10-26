@@ -347,6 +347,8 @@ export const newTextElement = (
     autoResize?: ExcalidrawTextElement["autoResize"];
     labelPosition?: ExcalidrawTextElement["labelPosition"];
     baseFontSize?: ExcalidrawTextElement["baseFontSize"];
+    fontWeight?: ExcalidrawTextElement["fontWeight"];
+    highlighted?: ExcalidrawTextElement["highlighted"];
     renderEnvironment?: RenderEnvironment;
   } & ElementConstructorOpts,
 ): NonDeleted<ExcalidrawTextElement> => {
@@ -354,9 +356,10 @@ export const newTextElement = (
   const fontSize = opts.fontSize || DEFAULT_FONT_SIZE;
   const lineHeight = opts.lineHeight || getLineHeight(fontFamily);
   const text = normalizeText(opts.text);
+  const fontWeight = opts.fontWeight === "bold" ? "bold" : undefined;
   const metrics = measureText(
     text,
-    getFontString({ fontFamily, fontSize }),
+    getFontString({ fontFamily, fontSize, fontWeight }),
     lineHeight,
     opts.renderEnvironment,
   );
@@ -384,6 +387,9 @@ export const newTextElement = (
     autoResize: opts.autoResize ?? true,
     lineHeight,
     labelPosition: opts.labelPosition ?? null,
+    // optional: written only when set, so plain text keeps its shape
+    ...(fontWeight && { fontWeight }),
+    ...(opts.highlighted && !opts.containerId && { highlighted: true }),
   };
 
   const textElement: NonDeleted<ExcalidrawTextElement> = newElementWith(

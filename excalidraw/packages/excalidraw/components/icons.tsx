@@ -2591,3 +2591,55 @@ export const settingsIcon = createIcon(
   </g>,
   tablerIconProps,
 );
+
+// text weight: the same glyph drawn thin / heavy
+const fontWeightIcon = (strokeWidth: number) =>
+  createIcon(
+    <g
+      stroke="currentColor"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    >
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M7 20l5 -16l5 16" />
+      <path d="M9.2 13h5.6" />
+    </g>,
+    tablerIconProps,
+  );
+
+export const FontWeightNormalIcon = fontWeightIcon(1.25);
+export const FontWeightBoldIcon = fontWeightIcon(2.75);
+
+export const TextHighlightIcon = createIcon(
+  <g
+    stroke="currentColor"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={1.5}
+  >
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M3 19h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+    <path d="M12.5 5.5l4 4" />
+    <path d="M4.5 13.5l4 4" />
+    <path d="M21 15v4h-8l4 -4z" />
+  </g>,
+  tablerIconProps,
+);
+
+export const TextNoHighlightIcon = createIcon(
+  <g
+    stroke="currentColor"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={1.5}
+  >
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M6 5h12" />
+    <path d="M12 5v14" />
+  </g>,
+  tablerIconProps,
+);

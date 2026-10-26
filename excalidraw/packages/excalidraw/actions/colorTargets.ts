@@ -4,9 +4,12 @@ import {
   DEFAULT_ELEMENT_BACKGROUND_PICKS,
   DEFAULT_ELEMENT_STROKE_COLOR_PALETTE,
   DEFAULT_ELEMENT_STROKE_PICKS,
+  DEFAULT_HIGHLIGHT_BG,
+  HIGHLIGHT_BACKGROUND_PICKS,
   STICKY_NOTE_BACKGROUND_PICKS,
   STICKY_NOTE_STROKE_PICKS,
   arrayToMap,
+  isTransparent,
 } from "@excalidraw/common";
 
 import {
@@ -33,18 +36,24 @@ export type ColorProperty = "strokeColor" | "backgroundColor";
  * Sticky notes are their own color domain: own defaults, own top picks, no
  * transparent. A pick targets the regular domain, the sticky domain, or both
  * ("mixed" selections write both defaults and use the regular picker).
+ * Highlighted text's marker (its background) is a domain of its own as well.
  */
-export type ColorTargetKind = "regular" | "sticky" | "mixed";
+export type ColorTargetKind = "regular" | "sticky" | "mixed" | "highlight";
 
 export type ColorDefaultKey =
   | "currentItemStrokeColor"
   | "currentItemBackgroundColor"
   | "currentItemStickynoteStrokeColor"
-  | "currentItemStickynoteBackgroundColor";
+  | "currentItemStickynoteBackgroundColor"
+  | "currentItemHighlightColor";
 
 export type ColorTargetAppState = Pick<
   AppState,
-  "selectedElementIds" | "editingTextElement" | "activeTool" | ColorDefaultKey
+  | "selectedElementIds"
+  | "editingTextElement"
+  | "activeTool"
+  | "currentItemTextHighlight"
+  | ColorDefaultKey
 >;
 
 export type ColorTarget = {
@@ -81,6 +90,9 @@ const STICKY_NOTE_EXCLUDED_COLORS: readonly string[] = [
   COLOR_PALETTE.transparent,
 ];
 
+const isHighlightTextTarget = (element: ExcalidrawElement) =>
+  isTextElement(element) && element.highlighted === true && !element.containerId;
+
 const isStickyNoteColorTarget = (
   element: ExcalidrawElement,
   elementsMap: ElementsMap,
@@ -109,7 +121,7 @@ export const resolveColorTarget = (
   const supports = (element: ExcalidrawElement) =>
     property === "strokeColor"
       ? hasStrokeColor(element.type)
-      : hasBackground(element.type);
+      : hasBackground(element.type) || isHighlightTextTarget(element);
 
   const targets: ExcalidrawElement[] = getSelectedElements(elements, appState, {
     includeBoundTextElement: property === "strokeColor",
@@ -129,8 +141,18 @@ export const resolveColorTarget = (
   }
 
   let kind: ColorTargetKind;
+  const isBackground = property === "backgroundColor";
   if (!targets.length) {
-    kind = appState.activeTool.type === "stickynote" ? "sticky" : "regular";
+    kind =
+      appState.activeTool.type === "stickynote"
+        ? "sticky"
+        : isBackground &&
+          appState.activeTool.type === "text" &&
+          appState.currentItemTextHighlight
+        ? "highlight"
+        : "regular";
+  } else if (isBackground && targets.every(isHighlightTextTarget)) {
+    kind = "highlight";
   } else {
     const stickyCount = targets.filter((element) =>
       isStickyNoteColorTarget(element, elementsMap),
@@ -141,6 +163,19 @@ export const resolveColorTarget = (
         : stickyCount === targets.length
         ? "sticky"
         : "mixed";
+  }
+
+  if (kind === "highlight") {
+    return {
+      kind,
+      property,
+      appStateKeys: ["currentItemHighlightColor"],
+      currentValue: appState.currentItemHighlightColor,
+      palette: DEFAULT_ELEMENT_BACKGROUND_COLOR_PALETTE,
+      topPicks: HIGHLIGHT_BACKGROUND_PICKS,
+      customizableTopPicks: "highlightBackground",
+      excludedColors: STICKY_NOTE_EXCLUDED_COLORS,
+    };
   }
 
   const keys = DEFAULT_KEYS[property];
@@ -186,6 +221,8 @@ export const getColorTargetAppStateUpdates = (
         ? normalizeStickyNoteStrokeColor(color)
         : key === "currentItemStickynoteBackgroundColor"
         ? normalizeStickyNoteBackgroundColor(color)
+        : key === "currentItemHighlightColor" && isTransparent(color)
+        ? DEFAULT_HIGHLIGHT_BG
         : color;
   }
   return updates;

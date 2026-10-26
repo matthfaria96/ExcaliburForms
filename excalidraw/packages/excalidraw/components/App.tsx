@@ -462,7 +462,25 @@ import type {
   UIConfig,
 } from "../types";
 import type { RoughCanvas } from "roughjs/bin/canvas";
-import type { Action, ActionResult } from "../actions/types";
+import type { Action, ActionName, ActionResult } from "../actions/types";
+
+/** context-menu entries for the features a `UIOptions.minimalUI` host leaves out */
+const MINIMAL_UI_HIDDEN_CONTEXT_MENU_ACTIONS: ReadonlySet<ActionName> = new Set([
+  "selectAllElementsInFrame",
+  "removeAllElementsFromFrame",
+  "wrapSelectionInFrame",
+  "bindText",
+  "unbindText",
+  "wrapTextInContainer",
+  "addToLibrary",
+  "hyperlink",
+  "copyElementLink",
+  "arrowBinding",
+  "midpointSnapping",
+  "zenMode",
+  "viewMode",
+  "stats",
+]);
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -11220,6 +11238,22 @@ class App extends React.Component<AppProps, AppState> {
   };
 
   private getContextMenuItems = (
+    type: "canvas" | "element",
+  ): ContextMenuItems => {
+    const items = this.getDefaultContextMenuItems(type);
+    if (!this.props.UIOptions.minimalUI) {
+      return items;
+    }
+    // the menu drops the separators this leaves doubled
+    return items.filter(
+      (item) =>
+        !item ||
+        item === CONTEXT_MENU_SEPARATOR ||
+        !MINIMAL_UI_HIDDEN_CONTEXT_MENU_ACTIONS.has(item.name),
+    );
+  };
+
+  private getDefaultContextMenuItems = (
     type: "canvas" | "element",
   ): ContextMenuItems => {
     const options: ContextMenuItems = [];

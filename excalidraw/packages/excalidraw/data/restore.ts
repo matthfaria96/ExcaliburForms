@@ -589,6 +589,14 @@ export const restoreElement = (
           ? normalizeStickyNoteFontSize(element.baseFontSize)
           : null,
       });
+      // optional, kept only when valid (see `newTextElement`); `element` is a
+      // copy, unknown properties having been spread over
+      if (element.fontWeight !== "bold") {
+        delete (element as Mutable<ExcalidrawTextElement>).fontWeight;
+      }
+      if (element.highlighted !== true || element.containerId) {
+        delete (element as Mutable<ExcalidrawTextElement>).highlighted;
+      }
 
       // if empty text, mark as deleted. We keep in array
       // for data integrity purposes (collab etc.)
@@ -1323,6 +1331,9 @@ export const restoreAppState = (
     ),
     stickyNoteBackground: restoreColorTopPicksList(
       nextAppState.colorTopPicks?.stickyNoteBackground,
+    ),
+    highlightBackground: restoreColorTopPicksList(
+      nextAppState.colorTopPicks?.highlightBackground,
     ),
   };
   nextAppState.fontTopPicks = restoreFontTopPicks(nextAppState.fontTopPicks);

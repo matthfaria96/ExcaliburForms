@@ -13,6 +13,7 @@ import {
   DEFAULT_GRID_STEP,
   isTestEnv,
   DEFAULT_STICKY_NOTE_BG,
+  DEFAULT_HIGHLIGHT_BG,
 } from "@excalidraw/common";
 
 import type { AppState, InputDevice, NormalizedZoomValue } from "./types";
@@ -47,6 +48,9 @@ export const getDefaultAppState = (): Omit<
     currentItemStrokeColor: DEFAULT_ELEMENT_PROPS.strokeColor,
     currentItemStickynoteStrokeColor: DEFAULT_ELEMENT_PROPS.strokeColor,
     currentItemStickynoteBackgroundColor: DEFAULT_STICKY_NOTE_BG,
+    currentItemHighlightColor: DEFAULT_HIGHLIGHT_BG,
+    currentItemTextHighlight: false,
+    currentItemFontWeight: "normal",
     currentItemRoundness: isTestEnv() ? "sharp" : "round",
     currentItemArrowType: ARROW_TYPE.round,
     currentItemStrokeStyle: DEFAULT_ELEMENT_PROPS.strokeStyle,
@@ -147,6 +151,7 @@ export const getDefaultAppState = (): Omit<
       bucketFill: null,
       stickyNoteStroke: null,
       stickyNoteBackground: null,
+      highlightBackground: null,
     },
     fontTopPicks: null,
   };
@@ -205,6 +210,9 @@ const APP_STATE_STORAGE_CONF = (<
     export: false,
     server: false,
   },
+  currentItemHighlightColor: { browser: true, export: false, server: false },
+  currentItemTextHighlight: { browser: true, export: false, server: false },
+  currentItemFontWeight: { browser: true, export: false, server: false },
   currentItemStrokeStyle: { browser: true, export: false, server: false },
   currentItemStrokeWidthKey: { browser: true, export: false, server: false },
   currentItemTextAlign: { browser: true, export: false, server: false },

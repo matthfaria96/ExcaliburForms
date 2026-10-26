@@ -717,6 +717,7 @@ export class AppText {
       const fontString = {
         fontSize,
         fontFamily,
+        fontWeight: this.app.state.currentItemFontWeight,
       };
       const minWidth = getApproxMinLineWidth(
         getFontString(fontString),
@@ -781,6 +782,12 @@ export class AppText {
         ? topLayerFrame.id
         : null;
 
+    // the marker belongs to free text only (labels have their container)
+    const isHighlighted =
+      this.app.state.currentItemTextHighlight &&
+      !(shouldBindToContainer && container) &&
+      !arrowEndpointBinding;
+
     const element =
       existingTextElement ||
       newTextElement({
@@ -791,7 +798,11 @@ export class AppText {
           shouldBindToContainer && isStickyNoteElement(container)
             ? container.strokeColor
             : this.app.state.currentItemStrokeColor,
-        backgroundColor: this.app.state.currentItemBackgroundColor,
+        backgroundColor: isHighlighted
+          ? this.app.state.currentItemHighlightColor
+          : this.app.state.currentItemBackgroundColor,
+        highlighted: isHighlighted,
+        fontWeight: this.app.state.currentItemFontWeight,
         fillStyle: this.app.state.currentItemFillStyle,
         strokeWidth: this.app.getCurrentItemStrokeWidth("text"),
         strokeStyle: this.app.state.currentItemStrokeStyle,

@@ -2,7 +2,11 @@ import { average } from "@excalidraw/math";
 
 import type { GlobalCoord } from "@excalidraw/math";
 
-import type { FontFamilyValues, FontString } from "@excalidraw/element/types";
+import type {
+  FontFamilyValues,
+  FontString,
+  FontWeight,
+} from "@excalidraw/element/types";
 
 import type {
   ActiveTool,
@@ -153,11 +157,16 @@ export const getFontFamilyString = ({
 export const getFontString = ({
   fontSize,
   fontFamily,
+  fontWeight,
 }: {
   fontSize: number;
   fontFamily: FontFamilyValues;
+  fontWeight?: FontWeight;
 }) => {
-  return `${fontSize}px ${getFontFamilyString({ fontFamily })}` as FontString;
+  const weight = fontWeight === "bold" ? "bold " : "";
+  return `${weight}${fontSize}px ${getFontFamilyString({
+    fontFamily,
+  })}` as FontString;
 };
 
 /** executes callback in the frame that's after the current one */

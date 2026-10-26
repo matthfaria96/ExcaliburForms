@@ -68,6 +68,12 @@ export const canChangeBackgroundColor = (
 ) => {
   return (
     hasBackground(appState.activeTool.type) ||
+    // the marker of highlighted text is its background
+    (appState.activeTool.type === "text" && appState.currentItemTextHighlight) ||
+    targetElements.some(
+      (element) =>
+        isTextElement(element) && element.highlighted && !element.containerId,
+    ) ||
     // a note's label (the target while editing it) has no fill, but a
     // background pick on it colors the note — so the picker stays available
     targetElements.some((element) =>

@@ -195,7 +195,12 @@
     "boxSelectionContain": "",
     "boxSelectionOverlap": "",
     "arrowBinding": "Atalho de flecha",
-    "midpointSnapping": "Encaixar em pontos intermediários"
+    "midpointSnapping": "Encaixar em pontos intermediários",
+    "fontWeight": "Peso da fonte",
+    "fontWeightNormal": "Normal",
+    "fontWeightBold": "Negrito",
+    "highlight": "Marca-texto",
+    "highlightOff": "Sem marca-texto"
   },
   "elementLink": {
     "title": "Links para o objeto",

@@ -59,6 +59,7 @@ import {
   getBoundTextMaxWidth,
 } from "./textElement";
 import { getLineHeightInPx } from "./textMeasurements";
+import { getTextHighlightRects } from "./textHighlight";
 import {
   isTextElement,
   isLinearElement,
@@ -675,6 +676,31 @@ const drawElementOnCanvas = (
           context.canvas.setAttribute("dir", rtl ? "rtl" : "ltr");
         }
         withSavedContext(context, () => {
+          const highlightRects = getTextHighlightRects(
+            element,
+            renderConfig.renderEnvironment,
+          );
+          if (highlightRects.length) {
+            context.fillStyle = applyDarkModeFilter(
+              element.backgroundColor,
+              renderConfig.theme === THEME.DARK,
+            );
+            for (const rect of highlightRects) {
+              context.beginPath();
+              if (typeof context.roundRect === "function") {
+                context.roundRect(
+                  rect.x,
+                  rect.y,
+                  rect.width,
+                  rect.height,
+                  rect.radius,
+                );
+              } else {
+                context.rect(rect.x, rect.y, rect.width, rect.height);
+              }
+              context.fill();
+            }
+          }
           context.font = getFontString(element);
           context.fillStyle = applyDarkModeFilter(
             element.strokeColor,

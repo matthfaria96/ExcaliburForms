@@ -347,6 +347,7 @@ const LayerUI = ({
               )}
           </Stack.Col>
           {defaultUIEnabled &&
+            !UIOptions.minimalUI &&
             !appState.viewModeEnabled &&
             appState.openDialog?.name !== "elementLinkSelector" && (
               <Section heading="shapes" className="shapes-section">
@@ -440,7 +441,7 @@ const LayerUI = ({
   };
 
   const renderSidebars = () => {
-    if (!defaultUIEnabled) {
+    if (!defaultUIEnabled || UIOptions.minimalUI) {
       return null;
     }
 
@@ -475,7 +476,7 @@ const LayerUI = ({
       {children}
       {/* Fallback entry points are the default UI. Host components above keep
           rendering into the outlets below even when defaults are disabled. */}
-      {defaultUIEnabled && (
+      {defaultUIEnabled && !UIOptions.minimalUI && (
         <>
           <DefaultMainMenu UIOptions={UIOptions} />
           <DefaultSidebar.Trigger

@@ -205,7 +205,12 @@
     "showHints": "Show hints",
     "inputDevice": "Input",
     "inputDeviceTrackpad": "Trackpad",
-    "inputDeviceMouse": "Mouse"
+    "inputDeviceMouse": "Mouse",
+    "fontWeight": "Font weight",
+    "fontWeightNormal": "Regular",
+    "fontWeightBold": "Bold",
+    "highlight": "Highlight",
+    "highlightOff": "No highlight"
   },
   "elementLink": {
     "title": "Link to object",

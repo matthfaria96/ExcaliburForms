@@ -37,7 +37,7 @@ import {
 } from "@excalidraw/element";
 import { getTextWidth } from "@excalidraw/element";
 import { getLineHeightInPx } from "@excalidraw/element";
-import { getLineWidth } from "@excalidraw/element";
+import { getLineWidth, isHighlightedText } from "@excalidraw/element";
 import { normalizeText } from "@excalidraw/element";
 import { wrapText } from "@excalidraw/element";
 import { getWrappedTextLines } from "@excalidraw/element";
@@ -501,6 +501,20 @@ export const textWysiwyg = ({
           appState.theme === THEME.DARK,
         ),
         opacity: updatedTextElement.opacity / 100,
+        // the marker is drawn on canvas, which hides the text being edited
+        ...(isHighlightedText(updatedTextElement)
+          ? {
+              background: applyDarkModeFilter(
+                updatedTextElement.backgroundColor,
+                appState.theme === THEME.DARK,
+              ),
+              borderRadius: `${
+                updatedTextElement.fontSize * 0.12 * appState.zoom.value
+              }px`,
+            }
+          : editable.style.borderRadius
+          ? { background: "transparent", borderRadius: "" }
+          : {}),
       });
       currentTextLayout = {
         angle: angle as Radians,

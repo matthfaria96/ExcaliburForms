@@ -21,6 +21,7 @@ export type FontFamilyKeys = keyof typeof FONT_FAMILY;
 export type FontFamilyValues = typeof FONT_FAMILY[FontFamilyKeys];
 export type Theme = typeof THEME[keyof typeof THEME];
 export type FontString = string & { _brand: "fontString" };
+export type FontWeight = "normal" | "bold";
 export type GroupId = string;
 export type PointerType = "mouse" | "pen" | "touch";
 export type StrokeRoundness = "round" | "sharp";
@@ -288,6 +289,20 @@ export type ExcalidrawTextElement = _ExcalidrawElementBase &
      * so it survives midpoint insertion and other geometry changes.
      * */
     labelPosition?: number | null;
+    /**
+     * Font weight. Faces without a bold file get a synthesized bold; the
+     * weight is part of the font string, so measurement accounts for it.
+     *
+     * @default "normal"
+     */
+    fontWeight?: FontWeight;
+    /**
+     * Free text drawn over a marker stroke (per line) in `backgroundColor`,
+     * the text itself staying in `strokeColor`. Ignored for bound text.
+     *
+     * @default false
+     */
+    highlighted?: boolean;
   }>;
 
 export type ExcalidrawBindableElement =

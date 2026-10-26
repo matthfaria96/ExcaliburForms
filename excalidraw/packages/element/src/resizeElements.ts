@@ -378,6 +378,7 @@ export const resizeSingleTextElement = (
       getFontString({
         fontSize: element.fontSize,
         fontFamily: element.fontFamily,
+        fontWeight: element.fontWeight,
       }),
       element.lineHeight,
       renderEnvironment,

@@ -181,7 +181,7 @@ import type { AppClassProperties, AppState, Primitive } from "../types";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
-const getStylesPanelInfo = (app: AppClassProperties) => {
+export const getStylesPanelInfo = (app: AppClassProperties) => {
   const stylesPanelMode = deriveStylesPanelMode(app.editorInterface);
   return {
     stylesPanelMode,
@@ -523,11 +523,15 @@ export const actionChangeBackgroundColor = register<
     const target = resolveColorTarget(appState, elements, "backgroundColor");
     // while editing a note's label the picker shows and sets the note's fill
     const elementsMap = app.scene.getNonDeletedElementsMap();
+    const label =
+      target.kind === "highlight"
+        ? t("labels.highlight")
+        : t("labels.background");
 
     return (
       <>
         {stylesPanelMode === "full" && (
-          <h3 aria-hidden="true">{t("labels.background")}</h3>
+          <h3 aria-hidden="true">{label}</h3>
         )}
         <ColorPicker
           topPicks={target.topPicks}
@@ -535,7 +539,7 @@ export const actionChangeBackgroundColor = register<
           customizableTopPicks={target.customizableTopPicks}
           excludedColors={target.excludedColors}
           type="elementBackground"
-          label={t("labels.background")}
+          label={label}
           color={getFormValue(
             elements,
             app,

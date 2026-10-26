@@ -22,6 +22,10 @@ export {
   actionChangeVerticalAlign,
   actionChangeArrowProperties,
 } from "./actionProperties";
+export {
+  actionChangeFontWeight,
+  actionToggleTextHighlight,
+} from "./actionTextStyle";
 
 export {
   actionChangeViewBackgroundColor,

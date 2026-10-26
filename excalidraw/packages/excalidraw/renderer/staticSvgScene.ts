@@ -25,7 +25,7 @@ import {
 } from "@excalidraw/element";
 import { LinearElementEditor } from "@excalidraw/element";
 import { getBoundTextElement, getContainerElement } from "@excalidraw/element";
-import { getLineHeightInPx } from "@excalidraw/element";
+import { getLineHeightInPx, getTextHighlightRects } from "@excalidraw/element";
 import {
   isArrowElement,
   isIframeLikeElement,
@@ -805,6 +805,25 @@ const renderElementToSvg = (
           element.fontSize,
           lineHeightPx,
         );
+        for (const rect of getTextHighlightRects(
+          element,
+          renderConfig.renderEnvironment,
+        )) {
+          const marker = svgRoot.ownerDocument.createElementNS(SVG_NS, "rect");
+          marker.setAttribute("x", `${rect.x}`);
+          marker.setAttribute("y", `${rect.y}`);
+          marker.setAttribute("width", `${rect.width}`);
+          marker.setAttribute("height", `${rect.height}`);
+          marker.setAttribute("rx", `${rect.radius}`);
+          marker.setAttribute(
+            "fill",
+            applyDarkModeFilter(
+              element.backgroundColor,
+              renderConfig.theme === THEME.DARK,
+            ),
+          );
+          node.appendChild(marker);
+        }
         const direction = isRTL(element.text) ? "rtl" : "ltr";
         const textAnchor =
           element.textAlign === "center"
@@ -819,6 +838,9 @@ const renderElementToSvg = (
           text.setAttribute("y", `${i * lineHeightPx + verticalOffset}`);
           text.setAttribute("font-family", getFontFamilyString(element));
           text.setAttribute("font-size", `${element.fontSize}px`);
+          if (element.fontWeight === "bold") {
+            text.setAttribute("font-weight", "bold");
+          }
           text.setAttribute(
             "fill",
             applyDarkModeFilter(

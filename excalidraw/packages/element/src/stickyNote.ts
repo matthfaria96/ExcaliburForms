@@ -706,10 +706,10 @@ export const getStickyNoteLayout = (
   const fontSizeMin = Math.min(STICKY_NOTE_MIN_FONT_SIZE, baseFontSize);
   const maxWidth = Math.max(baseWidth - STICKY_NOTE_PADDING * 2, 1);
   const maxHeight = Math.max(baseHeight - STICKY_NOTE_BODY_INSET_Y, 0);
-  const { fontFamily, lineHeight } = textElement;
+  const { fontFamily, fontWeight, lineHeight } = textElement;
 
   const fit = (fontSize: number): FontFit => {
-    const font = getFontString({ fontFamily, fontSize });
+    const font = getFontString({ fontFamily, fontSize, fontWeight });
     const text = wrapText(originalText, font, maxWidth, renderEnvironment);
     return {
       text,
@@ -725,7 +725,7 @@ export const getStickyNoteLayout = (
         fontSize: baseFontSize,
         ...measureText(
           "",
-          getFontString({ fontFamily, fontSize: baseFontSize }),
+          getFontString({ fontFamily, fontSize: baseFontSize, fontWeight }),
           lineHeight,
           renderEnvironment,
         ),

@@ -26,6 +26,7 @@ import type {
   ExcalidrawArrowElement,
   Arrowhead,
   FontFamilyValues,
+  FontWeight,
   FileId,
   Theme,
   StrokeRoundness,
@@ -451,6 +452,11 @@ export interface AppState {
   currentItemStrokeColor: string;
   currentItemStickynoteStrokeColor: string;
   currentItemStickynoteBackgroundColor: string;
+  /** marker color of new highlighted text (own color domain) */
+  currentItemHighlightColor: string;
+  /** whether the text tool creates highlighted text */
+  currentItemTextHighlight: boolean;
+  currentItemFontWeight: FontWeight;
   currentItemBackgroundColor: string;
   currentItemFillStyle: ExcalidrawElement["fillStyle"];
   currentItemStrokeWidthKey: StrokeWidthKey;
@@ -584,6 +590,8 @@ export interface AppState {
     /** sticky notes are their own color domain (own defaults, own picks) */
     stickyNoteStroke: readonly string[] | null;
     stickyNoteBackground: readonly string[] | null;
+    /** highlighted text is its own color domain (own defaults, own picks) */
+    highlightBackground: readonly string[] | null;
   };
   /** user-customized font-picker top picks (pinned via drag & drop from the
    * font picker popup). `null` means no customization (defaults are used) */
@@ -1170,6 +1178,15 @@ export type UIOptions = Partial<{
   tools: {
     image: boolean;
   };
+  /**
+   * The host renders the tool bar and the app menus itself (e.g. a native
+   * shell): hides the shapes toolbar, the main menu, the library, the help
+   * button, and the context-menu entries for features the host leaves out
+   * (frames, library, links, view/zen modes, stats).
+   *
+   * @default false
+   */
+  minimalUI?: boolean;
   /**
    * Optionally control the editor form factor and desktop UI mode from the host app.
    * If not provided, we will take care of it internally.
