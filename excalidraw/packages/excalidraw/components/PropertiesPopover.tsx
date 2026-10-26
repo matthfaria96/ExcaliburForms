@@ -49,10 +49,11 @@ export const PropertiesPopover = React.forwardRef<
           ref={ref}
           className={clsx("focus-visible-none", className)}
           data-prevent-outside-click
-          side={isMobilePortrait ? "bottom" : "right"}
+          side={isMobilePortrait ? "bottom" : "left"}
           align={isMobilePortrait ? "center" : "start"}
           alignOffset={-16}
           sideOffset={20}
+          collisionPadding={12}
           collisionBoundary={container ?? undefined}
           style={{
             zIndex: "var(--zIndex-ui-styles-popup)",
