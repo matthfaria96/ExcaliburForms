@@ -100,6 +100,32 @@ const layerLabel = (element: ExcalidrawElement): string => {
   }
 };
 
+/** the sticky note under the selection, if any (drives the native panel) */
+const selectedSticky = (
+  appState: AppState,
+  elements: readonly ExcalidrawElement[],
+): { backgroundColor: string; fontSize: number } | null => {
+  const note = elements.find(
+    (element) =>
+      appState.selectedElementIds[element.id] &&
+      !element.isDeleted &&
+      element.type === "stickynote",
+  );
+  if (!note) {
+    return null;
+  }
+  const label = elements.find(
+    (element) =>
+      element.type === "text" &&
+      element.containerId === note.id &&
+      !element.isDeleted,
+  ) as ExcalidrawTextElement | undefined;
+  return {
+    backgroundColor: note.backgroundColor,
+    fontSize: label?.fontSize ?? 20,
+  };
+};
+
 /** state the native toolbar mirrors; posted only when it changes */
 const toNativeState = (
   appState: AppState,
@@ -113,6 +139,7 @@ const toNativeState = (
     ? appState.currentItemHighlightColor
     : null,
   text: selectedText(appState, elements),
+  sticky: selectedSticky(appState, elements),
   layers: elements
     .filter((element) => !element.isDeleted)
     .map((element) => ({

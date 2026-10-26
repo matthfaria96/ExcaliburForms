@@ -34,6 +34,7 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var strokeColor: String? = TextColor.defaultHex
     @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
     @Published private(set) var textSelection: TextSelection?
+    @Published private(set) var stickySelection: StickySelection?
     @Published private(set) var layers: [LayerItem] = []
     @Published var lastError: String?
 
@@ -139,6 +140,17 @@ final class EditorController: NSObject, ObservableObject {
             )
         } else {
             textSelection = nil
+        }
+
+        if let sticky = body["sticky"] as? [String: Any],
+           let backgroundColor = sticky["backgroundColor"] as? String,
+           let fontSize = sticky["fontSize"] as? Double {
+            stickySelection = StickySelection(
+                backgroundColor: backgroundColor,
+                fontSize: fontSize
+            )
+        } else {
+            stickySelection = nil
         }
 
         layers = (body["layers"] as? [[String: Any]] ?? []).compactMap { dict in

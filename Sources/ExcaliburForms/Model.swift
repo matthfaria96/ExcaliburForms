@@ -241,6 +241,27 @@ struct LayerItem: Identifiable, Equatable {
     }
 }
 
+/// Propriedades da nota adesiva selecionada (painel da direita).
+struct StickySelection: Equatable {
+    var backgroundColor: String
+    var fontSize: Double
+}
+
+/// Cores de fundo da nota adesiva.
+struct StickyColor: Identifiable, Equatable {
+    let hex: String
+    let name: String
+    var id: String { hex }
+
+    static let options: [StickyColor] = [
+        StickyColor(hex: "#ffd43b", name: "Amarelo"),
+        StickyColor(hex: "#f783ac", name: "Rosa"),
+        StickyColor(hex: "#69db7c", name: "Verde"),
+        StickyColor(hex: "#4dabf7", name: "Azul"),
+        StickyColor(hex: "#ffa94d", name: "Laranja"),
+    ]
+}
+
 /// Propriedades do texto selecionado, lidas do editor para o painel da direita.
 struct TextSelection: Equatable {
     var fontSize: Double

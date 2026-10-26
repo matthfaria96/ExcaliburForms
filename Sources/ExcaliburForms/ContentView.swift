@@ -76,83 +76,46 @@ struct ContentView: View {
     }
 
     private var showsProperties: Bool {
-        editor.textSelection != nil || editor.activeTool == .text
+        editor.textSelection != nil
+            || editor.stickySelection != nil
+            || editor.activeTool == .text
+            || editor.activeTool == .stickynote
     }
 
-    /// Painel fixo de propriedades do texto, no canto direito.
+    /// Painel fixo de propriedades, no canto direito (texto ou nota).
     private var propertiesPanel: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Texto")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Cor")
-                    .font(.caption)
+            if let sticky = editor.stickySelection {
+                Text("Nota")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
-                HStack(spacing: 6) {
-                    ForEach(TextColor.options.prefix(7)) { option in
-                        colorDot(option.hex, selected: editor.strokeColor == option.hex) {
-                            editor.performAction("changeStrokeColor", value: ["color": option.hex])
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Cor")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        ForEach(StickyColor.options) { option in
+                            colorDot(option.hex, selected: sticky.backgroundColor == option.hex) {
+                                editor.performAction("changeBackgroundColor", value: ["color": option.hex])
+                            }
                         }
                     }
                 }
-            }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Marca-texto")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Sem grifo") {
-                        editor.performAction("toggleTextHighlight", value: false)
-                    }
-                    .buttonStyle(.plain)
-                    .font(.caption)
+                fontSizeSection(current: sticky.fontSize)
+            } else {
+                Text("Texto")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
-                }
-                HStack(spacing: 6) {
-                    ForEach(HighlightColor.options) { option in
-                        colorDot(option.hex, selected: editor.highlightColor == option.hex) {
-                            editor.performAction("toggleTextHighlight", value: true)
-                            editor.performAction("changeBackgroundColor", value: ["color": option.hex])
-                        }
-                    }
-                }
-            }
 
-            if let text = editor.textSelection {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Tamanho")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 6) {
-                        ForEach(TextSelection.sizes, id: \.self) { size in
-                            sizeButton(size, current: text.fontSize)
-                        }
-                    }
-                }
+                textColorSection()
+                highlightSection()
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Peso")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 6) {
-                        weightButton("normal", label: "Normal", current: text.fontWeight)
-                        weightButton("bold", label: "Negrito", current: text.fontWeight)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Alinhamento")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 6) {
-                        alignButton("left", icon: "text.alignleft", current: text.textAlign)
-                        alignButton("center", icon: "text.aligncenter", current: text.textAlign)
-                        alignButton("right", icon: "text.alignright", current: text.textAlign)
-                    }
+                if let text = editor.textSelection {
+                    fontSizeSection(current: text.fontSize)
+                    weightSection(current: text.fontWeight)
+                    alignSection(current: text.textAlign)
                 }
             }
         }
@@ -165,6 +128,84 @@ struct ContentView: View {
                 .strokeBorder(Color.primary.opacity(0.08))
         )
         .shadow(color: .black.opacity(0.16), radius: 16, y: 6)
+    }
+
+    private func textColorSection() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Cor")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ForEach(TextColor.options.prefix(7)) { option in
+                    colorDot(option.hex, selected: editor.strokeColor == option.hex) {
+                        editor.performAction("changeStrokeColor", value: ["color": option.hex])
+                    }
+                }
+            }
+        }
+    }
+
+    private func highlightSection() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Marca-texto")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Sem grifo") {
+                    editor.performAction("toggleTextHighlight", value: false)
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 6) {
+                ForEach(HighlightColor.options) { option in
+                    colorDot(option.hex, selected: editor.highlightColor == option.hex) {
+                        editor.performAction("toggleTextHighlight", value: true)
+                        editor.performAction("changeBackgroundColor", value: ["color": option.hex])
+                    }
+                }
+            }
+        }
+    }
+
+    private func fontSizeSection(current: Double) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Tamanho")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ForEach(TextSelection.sizes, id: \.self) { size in
+                    sizeButton(size, current: current)
+                }
+            }
+        }
+    }
+
+    private func weightSection(current: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Peso")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                weightButton("normal", label: "Normal", current: current)
+                weightButton("bold", label: "Negrito", current: current)
+            }
+        }
+    }
+
+    private func alignSection(current: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Alinhamento")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                alignButton("left", icon: "text.alignleft", current: current)
+                alignButton("center", icon: "text.aligncenter", current: current)
+                alignButton("right", icon: "text.alignright", current: current)
+            }
+        }
     }
 
     private func colorDot(_ hex: String, selected: Bool, action: @escaping () -> Void) -> some View {

@@ -35,6 +35,11 @@ export type NativeMessage =
         type: string;
         selected: boolean;
       }[];
+      /** the selected sticky note's properties, if a note is selected */
+      sticky: {
+        backgroundColor: string;
+        fontSize: number;
+      } | null;
     }
   | { type: "error"; message: string };
 
