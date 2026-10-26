@@ -474,10 +474,8 @@ const drawElementOnCanvas = (
         );
 
         const commands = getStickyNotePathCommands(element);
-        context.fillStyle = applyDarkModeFilter(
-          element.backgroundColor,
-          renderConfig.theme === THEME.DARK,
-        );
+        // keep the note color vivid in dark mode instead of inverting it
+        context.fillStyle = element.backgroundColor;
         fillStickyNoteShape(context, commands);
         strokeStickyNoteEdge(context, commands);
 
@@ -681,10 +679,8 @@ const drawElementOnCanvas = (
             renderConfig.renderEnvironment,
           );
           if (highlightRects.length) {
-            context.fillStyle = applyDarkModeFilter(
-              element.backgroundColor,
-              renderConfig.theme === THEME.DARK,
-            );
+            // the marker keeps its vivid color in both themes
+            context.fillStyle = element.backgroundColor;
             for (const rect of highlightRects) {
               context.beginPath();
               if (typeof context.roundRect === "function") {
@@ -702,10 +698,13 @@ const drawElementOnCanvas = (
             }
           }
           context.font = getFontString(element);
-          context.fillStyle = applyDarkModeFilter(
-            element.strokeColor,
-            renderConfig.theme === THEME.DARK,
-          );
+          // marked text stays dark so it reads on the vivid marker in both themes
+          context.fillStyle = element.highlighted
+            ? element.strokeColor
+            : applyDarkModeFilter(
+                element.strokeColor,
+                renderConfig.theme === THEME.DARK,
+              );
           context.textAlign = element.textAlign as CanvasTextAlign;
 
           // Canvas does not support multiline text by default

@@ -815,13 +815,7 @@ const renderElementToSvg = (
           marker.setAttribute("width", `${rect.width}`);
           marker.setAttribute("height", `${rect.height}`);
           marker.setAttribute("rx", `${rect.radius}`);
-          marker.setAttribute(
-            "fill",
-            applyDarkModeFilter(
-              element.backgroundColor,
-              renderConfig.theme === THEME.DARK,
-            ),
-          );
+          marker.setAttribute("fill", element.backgroundColor);
           node.appendChild(marker);
         }
         const direction = isRTL(element.text) ? "rtl" : "ltr";
@@ -843,10 +837,12 @@ const renderElementToSvg = (
           }
           text.setAttribute(
             "fill",
-            applyDarkModeFilter(
-              element.strokeColor,
-              renderConfig.theme === THEME.DARK,
-            ),
+            element.highlighted
+              ? element.strokeColor
+              : applyDarkModeFilter(
+                  element.strokeColor,
+                  renderConfig.theme === THEME.DARK,
+                ),
           );
           text.setAttribute("text-anchor", textAnchor);
           text.setAttribute("style", "white-space: pre;");
