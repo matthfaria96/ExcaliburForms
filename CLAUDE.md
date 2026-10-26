@@ -28,6 +28,7 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 ## Fluxo de trabalho (pedido do usuário)
 
 - **Toda vez que o código do app for atualizado, instalar para o usuário testar**: rodar `scripts/build-app.sh --install` (build da página + Swift release + Liquiz Glass + assinatura + cópia para `/Applications` + `open`) e confirmar o app aberto. Não esperar o usuário pedir.
+- **Sempre terminar cada resposta dizendo se instalou o app ou não** (ex.: "Instalado em /Applications e aberto" / "Não instalei nesta rodada").
 - Sempre rodar os testes (`swift test` e `vitest run`) antes de instalar.
 - Fazer commit e `git push origin main` das mudanças (repositório público `matthfaria96/ExcaliburForms`).
 
