@@ -136,7 +136,9 @@ final class EditorController: NSObject, ObservableObject {
                 fontSize: fontSize,
                 fontWeight: fontWeight,
                 textAlign: textAlign,
-                highlighted: text["highlighted"] as? Bool ?? false
+                highlighted: text["highlighted"] as? Bool ?? false,
+                backgroundColor: text["backgroundColor"] as? String ?? "transparent",
+                strokeColor: text["strokeColor"] as? String ?? "#1e1e1e"
             )
         } else {
             textSelection = nil

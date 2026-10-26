@@ -62,7 +62,7 @@ import {
   getBoundTextMaxWidth,
 } from "./textElement";
 import { getLineHeightInPx } from "./textMeasurements";
-import { getTextHighlightRects } from "./textHighlight";
+import { getTextHighlightRects, isHighlightedText } from "./textHighlight";
 import {
   isTextElement,
   isLinearElement,
@@ -715,15 +715,22 @@ const drawElementOnCanvas = (
           } else if (element.customData?.frameName) {
             context.fillStyle = element.strokeColor;
           } else if (!isLabel) {
-            // free text keeps its hue but is darkened/lightened until it reads
-            // on the marker (e.g. yellow text on a yellow marker)
-            const markerColor = isTransparent(element.backgroundColor)
-              ? DEFAULT_HIGHLIGHT_BG
-              : element.backgroundColor;
-            context.fillStyle = getReadableTextColor(
-              element.strokeColor,
-              markerColor,
-            );
+            if (isHighlightedText(element)) {
+              // free text keeps its hue but is darkened/lightened until it
+              // reads on the marker (e.g. yellow text on a yellow marker)
+              const markerColor = isTransparent(element.backgroundColor)
+                ? DEFAULT_HIGHLIGHT_BG
+                : element.backgroundColor;
+              context.fillStyle = getReadableTextColor(
+                element.strokeColor,
+                markerColor,
+              );
+            } else {
+              context.fillStyle = applyDarkModeFilter(
+                element.strokeColor,
+                renderConfig.theme === THEME.DARK,
+              );
+            }
           } else {
             context.fillStyle = applyDarkModeFilter(
               element.strokeColor,

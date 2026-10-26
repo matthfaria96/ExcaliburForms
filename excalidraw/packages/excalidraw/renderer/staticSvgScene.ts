@@ -28,7 +28,7 @@ import {
 } from "@excalidraw/element";
 import { LinearElementEditor } from "@excalidraw/element";
 import { getBoundTextElement, getContainerElement } from "@excalidraw/element";
-import { getLineHeightInPx, getTextHighlightRects } from "@excalidraw/element";
+import { getLineHeightInPx, getTextHighlightRects, isHighlightedText } from "@excalidraw/element";
 import {
   isArrowElement,
   isIframeLikeElement,
@@ -847,7 +847,7 @@ const renderElementToSvg = (
             "fill",
             element.customData?.frameName
               ? element.strokeColor
-              : element.containerId
+              : element.containerId || !isHighlightedText(element)
               ? applyDarkModeFilter(
                   element.strokeColor,
                   renderConfig.theme === THEME.DARK,

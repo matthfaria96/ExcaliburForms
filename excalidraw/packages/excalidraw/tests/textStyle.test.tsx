@@ -77,9 +77,9 @@ describe("font weight", () => {
 });
 
 describe("text highlight geometry", () => {
-  it("marks every free text, never labels", () => {
+  it("marks free text by default, never labels, and respects an explicit off", () => {
     expect(isHighlightedText(textElement())).toBe(true);
-    expect(isHighlightedText(textElement({ highlighted: false }))).toBe(true);
+    expect(isHighlightedText(textElement({ highlighted: false }))).toBe(false);
     expect(
       isHighlightedText(
         textElement({ backgroundColor: COLOR_PALETTE.transparent }),

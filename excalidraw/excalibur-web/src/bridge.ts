@@ -27,6 +27,8 @@ export type NativeMessage =
         fontWeight: "normal" | "bold";
         textAlign: "left" | "center" | "right";
         highlighted: boolean;
+        backgroundColor: string;
+        strokeColor: string;
       } | null;
       /** every visible element, front-most first */
       layers: {

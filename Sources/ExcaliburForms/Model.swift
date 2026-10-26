@@ -267,6 +267,8 @@ struct TextSelection: Equatable {
     var fontWeight: String
     var textAlign: String
     var highlighted: Bool
+    var backgroundColor: String
+    var strokeColor: String
 
     static let sizes: [Double] = [16, 20, 28, 36]
     static let sizeLabels: [Double: String] = [16: "S", 20: "M", 28: "L", 36: "XL"]

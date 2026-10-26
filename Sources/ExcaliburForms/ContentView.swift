@@ -106,7 +106,7 @@ struct ContentView: View {
                 barGroup("Cor") {
                     HStack(spacing: 6) {
                         ForEach(TextColor.options.prefix(7)) { option in
-                            colorDot(option.hex, selected: editor.strokeColor == option.hex) {
+                            colorDot(option.hex, selected: selectedTextStroke == option.hex) {
                                 editor.performAction("changeStrokeColor", value: ["color": option.hex])
                             }
                         }
@@ -115,8 +115,18 @@ struct ContentView: View {
                 barDivider
                 barGroup("Marca-texto") {
                     HStack(spacing: 6) {
+                        Button {
+                            editor.performAction("toggleTextHighlight", value: false)
+                        } label: {
+                            noHighlightDot(selected: selectedTextBackground == nil)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Sem fundo")
                         ForEach(HighlightColor.options) { option in
-                            colorDot(option.hex, selected: editor.highlightColor == option.hex) {
+                            colorDot(
+                                option.hex,
+                                selected: selectedTextBackground?.lowercased() == option.hex
+                            ) {
                                 editor.performAction("toggleTextHighlight", value: true)
                                 editor.performAction("changeBackgroundColor", value: ["color": option.hex])
                             }
@@ -172,6 +182,34 @@ struct ContentView: View {
                 .textCase(.uppercase)
             content()
         }
+    }
+
+    /// Cor do texto em edição: a do texto selecionado ou o padrão da ferramenta.
+    private var selectedTextStroke: String? {
+        editor.textSelection?.strokeColor ?? editor.strokeColor
+    }
+
+    /// Cor do grifo em edição: `nil` quando o texto está sem fundo.
+    private var selectedTextBackground: String? {
+        if let text = editor.textSelection {
+            return text.highlighted ? text.backgroundColor : nil
+        }
+        return editor.highlightColor
+    }
+
+    private func noHighlightDot(selected: Bool) -> some View {
+        ZStack {
+            Circle().fill(Color.white)
+            Circle().strokeBorder(Color.black.opacity(0.15), lineWidth: 1)
+            Rectangle()
+                .fill(Color(hexString: "#ff3b30"))
+                .frame(width: 2, height: 15)
+                .rotationEffect(.degrees(45))
+            if selected {
+                Circle().strokeBorder(Color.accentColor, lineWidth: 2)
+            }
+        }
+        .frame(width: 22, height: 22)
     }
 
     private var barDivider: some View {
@@ -283,11 +321,18 @@ struct ContentView: View {
             ToolButton(tool: .image, isActive: editor.activeTool == .image) {
                 editor.setTool(.image)
             }
-            ToolButton(tool: .text, isActive: editor.activeTool == .text) {
-                editor.setTool(.text)
+            HStack(spacing: 1) {
+                ToolButton(tool: .text, isActive: editor.activeTool == .text) {
+                    editor.setTool(.text)
+                }
+                textColorSwatch
+                highlightSwatch
             }
-            textColorSwatch
-            highlightSwatch
+            .padding(.horizontal, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.primary.opacity(0.06))
+            )
             ToolButton(tool: .stickynote, isActive: editor.activeTool == .stickynote) {
                 editor.setTool(.stickynote)
             }

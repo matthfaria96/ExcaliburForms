@@ -67,6 +67,8 @@ const selectedText = (
     fontWeight: selected.fontWeight ?? "normal",
     textAlign: selected.textAlign,
     highlighted: selected.highlighted === true,
+    backgroundColor: selected.backgroundColor,
+    strokeColor: selected.strokeColor,
   };
 };
 

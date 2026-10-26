@@ -22,9 +22,12 @@ export type TextHighlightRect = Readonly<{
 
 /** Whether a text element paints a marker stroke behind its lines. */
 export const isHighlightedText = (element: ExcalidrawTextElement) =>
-  // free text always carries a marker (labels belong to their container, and
-  // the frame-name helper text is not user text)
-  !element.containerId && !element.customData?.frameName;
+  // free text draws a marker by default; an explicit `highlighted: false`
+  // turns it off. Labels belong to their container and the frame-name helper
+  // text is not user text.
+  !element.containerId &&
+  !element.customData?.frameName &&
+  element.highlighted !== false;
 
 /**
  * Marker rectangles behind each non-empty line, in the element's local
