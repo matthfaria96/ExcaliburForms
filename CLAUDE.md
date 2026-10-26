@@ -25,6 +25,12 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
   - Persistência: `~/Library/Application Support/ExcaliburForms/boards.json` (índice) e `Boards/<id>/scene.excalidraw` + `Boards/<id>/files/<fileId>.json` (cada imagem gravada uma vez). Escritas atômicas; excluir manda a pasta para o Lixo.
 - Build/teste Swift exigem `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`. Testes JS: `npx vitest run` na pasta `excalidraw/`.
 
+## Fluxo de trabalho (pedido do usuário)
+
+- **Toda vez que o código do app for atualizado, instalar para o usuário testar**: rodar `scripts/build-app.sh --install` (build da página + Swift release + Liquiz Glass + assinatura + cópia para `/Applications` + `open`) e confirmar o app aberto. Não esperar o usuário pedir.
+- Sempre rodar os testes (`swift test` e `vitest run`) antes de instalar.
+- Fazer commit e `git push origin main` das mudanças (repositório público `matthfaria96/ExcaliburForms`).
+
 ## Feito até agora
 
 1. Commit `06bfce6` — Excalidraw vendorizado sem modificações.
