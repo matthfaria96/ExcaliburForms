@@ -216,6 +216,17 @@ struct TextColor: Identifiable, Equatable {
     static let defaultHex = "#1e1e1e"
 }
 
+/// Propriedades do texto selecionado, lidas do editor para o painel da direita.
+struct TextSelection: Equatable {
+    var fontSize: Double
+    var fontWeight: String
+    var textAlign: String
+    var highlighted: Bool
+
+    static let sizes: [Double] = [16, 20, 28, 36]
+    static let sizeLabels: [Double: String] = [16: "S", 20: "M", 28: "L", 36: "XL"]
+}
+
 extension Color {
     init(hexString: String) {
         let cleaned = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

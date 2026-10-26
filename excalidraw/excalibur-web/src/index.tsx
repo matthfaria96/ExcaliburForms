@@ -55,6 +55,8 @@ export type ExcaliburHostApi = {
   setHighlight: (color: string | null) => void;
   /** sets the text tool's default text color */
   setStrokeColor: (color: string) => void;
+  /** runs an editor action, optionally with a value (font size, align, …) */
+  action: (name: string, value: unknown) => boolean;
   command: (name: string) => boolean;
   exportImage: (request: ExportRequest) => Promise<ExportResult>;
 };
@@ -113,6 +115,8 @@ const Root = () => {
       setStrokeColor: (color) => {
         requireApi().updateScene({ appState: { currentItemStrokeColor: color } });
       },
+      action: (name, value) =>
+        requireApi().executeAction(name as ActionName, value),
       command: (name) => {
         const action = COMMANDS[name];
         return !!action && requireApi().executeAction(action);

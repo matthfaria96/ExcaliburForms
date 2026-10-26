@@ -33,6 +33,7 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var editorTheme: EditorTheme = .light
     @Published private(set) var strokeColor: String? = TextColor.defaultHex
     @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
+    @Published private(set) var textSelection: TextSelection?
     @Published var lastError: String?
 
     let webView: WKWebView
@@ -124,6 +125,20 @@ final class EditorController: NSObject, ObservableObject {
         }
         strokeColor = body["strokeColor"] as? String
         highlightColor = body["highlightColor"] as? String
+
+        if let text = body["text"] as? [String: Any],
+           let fontSize = text["fontSize"] as? Double,
+           let fontWeight = text["fontWeight"] as? String,
+           let textAlign = text["textAlign"] as? String {
+            textSelection = TextSelection(
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                textAlign: textAlign,
+                highlighted: text["highlighted"] as? Bool ?? false
+            )
+        } else {
+            textSelection = nil
+        }
     }
 
     // MARK: - Chamadas à página
@@ -164,6 +179,12 @@ final class EditorController: NSObject, ObservableObject {
     /// Define a cor padrão do texto.
     func setStrokeColor(_ color: String) {
         invoke("window.excalibur.setStrokeColor(color)", arguments: ["color": color])
+    }
+
+    /// Executa uma ação do editor (com valor opcional: tamanho, alinhamento…).
+    func performAction(_ name: String, value: Any? = nil) {
+        let payload: Any = value ?? NSNull()
+        invoke("window.excalibur.action(name, value)", arguments: ["name": name, "value": payload])
     }
 
     func command(_ command: Command) {

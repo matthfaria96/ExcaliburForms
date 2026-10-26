@@ -8,6 +8,10 @@ import type {
   ExcalidrawInitialDataState,
   UIOptions,
 } from "@excalidraw/excalidraw/types";
+import type {
+  ExcalidrawElement,
+  ExcalidrawTextElement,
+} from "@excalidraw/element/types";
 
 import { createAutosave } from "./autosave";
 import { postToNative, reportError } from "./bridge";
@@ -39,8 +43,38 @@ type Props = {
   onApi: (api: ExcalidrawImperativeAPI | null, autosave: Autosave) => void;
 };
 
+/** the text element under the selection, if any (drives the native panel) */
+const selectedText = (
+  appState: AppState,
+  elements: readonly ExcalidrawElement[],
+): {
+  fontSize: number;
+  fontWeight: "normal" | "bold";
+  textAlign: "left" | "center" | "right";
+  highlighted: boolean;
+} | null => {
+  const selected = elements.find(
+    (element) =>
+      appState.selectedElementIds[element.id] &&
+      !element.isDeleted &&
+      element.type === "text",
+  ) as ExcalidrawTextElement | undefined;
+  if (!selected) {
+    return null;
+  }
+  return {
+    fontSize: selected.fontSize,
+    fontWeight: selected.fontWeight ?? "normal",
+    textAlign: selected.textAlign,
+    highlighted: selected.highlighted === true,
+  };
+};
+
 /** state the native toolbar mirrors; posted only when it changes */
-const toNativeState = (appState: AppState) => ({
+const toNativeState = (
+  appState: AppState,
+  elements: readonly ExcalidrawElement[],
+) => ({
   tool: getActiveToolId(appState),
   hasSelection: Object.keys(appState.selectedElementIds).length > 0,
   theme: appState.theme,
@@ -48,6 +82,7 @@ const toNativeState = (appState: AppState) => ({
   highlightColor: appState.currentItemTextHighlight
     ? appState.currentItemHighlightColor
     : null,
+  text: selectedText(appState, elements),
 });
 
 export const BoardEditor = ({ board, theme, onApi }: Props) => {
@@ -70,7 +105,7 @@ export const BoardEditor = ({ board, theme, onApi }: Props) => {
       NonNullable<React.ComponentProps<typeof Excalidraw>["onChange"]>
     >) => {
       autosave.schedule({ elements, appState, files });
-      const nativeState = toNativeState(appState);
+      const nativeState = toNativeState(appState, elements);
       const key = JSON.stringify(nativeState);
       if (key !== lastNativeState.current) {
         lastNativeState.current = key;

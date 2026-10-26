@@ -21,6 +21,13 @@ export type NativeMessage =
       strokeColor: string;
       /** the text tool's default marker color; `null` when the marker is off */
       highlightColor: string | null;
+      /** the selected text element's properties, if a text is selected */
+      text: {
+        fontSize: number;
+        fontWeight: "normal" | "bold";
+        textAlign: "left" | "center" | "right";
+        highlighted: boolean;
+      } | null;
     }
   | { type: "error"; message: string };
 

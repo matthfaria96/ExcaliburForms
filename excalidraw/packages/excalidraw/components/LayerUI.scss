@@ -117,21 +117,12 @@
     }
   }
 
-  // Hosts with a minimal UI (the native app) use a docked properties panel on
-  // the right edge — fixed so it can never be pushed off-screen — with a small
-  // slide-in. The zoom/undo footer also sits on the right.
+  // Hosts with a minimal UI (the native app) render their own fixed properties
+  // panel in SwiftUI, so the editor's floating styles panel is hidden and the
+  // zoom/undo footer sits on the right.
   .layer-ui__wrapper--minimal {
-    .App-menu_top > .App-menu_top__left {
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      left: auto;
-      width: auto;
-      max-width: min(340px, calc(100vw - 28px));
-      max-height: calc(100vh - 28px);
-      overflow-y: auto;
-      z-index: 20;
-      animation: minimal-panel-in 0.16s ease-out;
+    .selected-shape-actions-container {
+      display: none;
     }
 
     .App-menu_bottom {
@@ -210,16 +201,5 @@
         color: black !important;
       }
     }
-  }
-}
-
-@keyframes minimal-panel-in {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
   }
 }
