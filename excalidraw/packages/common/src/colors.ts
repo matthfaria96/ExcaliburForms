@@ -122,9 +122,16 @@ export const applyDarkModeFilter = (color: string, enable = true): string => {
 };
 
 /**
+ * Contrast below which text on a marker counts as "the same color". Kept low
+ * on purpose: the user's pick must win (red on yellow stays red); only text
+ * that nearly vanishes on its marker (yellow on yellow) is adjusted.
+ */
+const MIN_TEXT_ON_MARKER_CONTRAST = 2;
+
+/**
  * Returns a text color that stays readable on `backgroundColor`. It keeps the
- * text hue when possible, darkening/lightening it until the WCAG contrast is
- * enough (e.g. yellow text on a yellow marker becomes darker).
+ * text hue, darkening/lightening it only as much as needed when the text would
+ * nearly vanish on the marker (e.g. yellow text on a yellow marker).
  */
 export const getReadableTextColor = (
   textColor: string,
@@ -139,13 +146,30 @@ export const getReadableTextColor = (
     return textColor;
   }
   const target = bg.isLight() ? "#000000" : "#ffffff";
+  if (tinycolor.readability(fg, bg) >= MIN_TEXT_ON_MARKER_CONTRAST) {
+    // the pick reads fine: keep it exactly (with its alpha)
+    return textColor;
+  }
   for (let i = 0; i < 12; i++) {
-    if (tinycolor.readability(fg, bg) >= 4.5) {
+    fg = tinycolor.mix(fg, target, 12);
+    if (tinycolor.readability(fg, bg) >= MIN_TEXT_ON_MARKER_CONTRAST) {
       return fg.toHexString();
     }
-    fg = tinycolor.mix(fg, target, 12);
   }
   return target;
+};
+
+/**
+ * Color of a sticky note's date footer: a deeper shade of the note itself, so
+ * the corner detail follows the note color (and never turns white in dark
+ * mode, since notes keep their real color there).
+ */
+export const getStickyNoteFooterColor = (noteColor: string): string => {
+  const note = tinycolor(noteColor);
+  if (!note.isValid() || note.getAlpha() === 0) {
+    return "#1e1e1e";
+  }
+  return tinycolor.mix(note, "#000000", 55).toHexString();
 };
 
 const _reverseDarkModeInvert = (

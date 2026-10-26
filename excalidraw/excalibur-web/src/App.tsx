@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Excalidraw, getStrokeWidthByKey } from "@excalidraw/excalidraw";
-import { STROKE_WIDTH_KEYS } from "@excalidraw/common";
+import {
+  DEFAULT_HIGHLIGHT_BG,
+  STROKE_WIDTH_KEYS,
+  isTransparent,
+} from "@excalidraw/common";
+import { isHighlightedText } from "@excalidraw/element";
 
 import type {
   AppState,
@@ -38,9 +43,13 @@ const UI_OPTIONS: Partial<UIOptions> = {
   tools: { image: true },
 };
 
+const DOT_GRID_UI_OPTIONS: Partial<UIOptions> = { ...UI_OPTIONS, dotGrid: true };
+
 type Props = {
   board: BoardPayload;
   theme: "light" | "dark";
+  /** whiteboard dots on the canvas (Ajustes › Geral) */
+  dotGrid: boolean;
   onApi: (api: ExcalidrawImperativeAPI | null, autosave: Autosave) => void;
 };
 
@@ -55,6 +64,7 @@ const selectedText = (
   highlighted: boolean;
   backgroundColor: string;
   strokeColor: string;
+  fontFamily: number;
 } | null => {
   const selected = elements.find(
     (element) =>
@@ -69,9 +79,14 @@ const selectedText = (
     fontSize: selected.fontSize,
     fontWeight: selected.fontWeight ?? "normal",
     textAlign: selected.textAlign as "left" | "center" | "right",
-    highlighted: selected.highlighted === true,
-    backgroundColor: selected.backgroundColor,
+    // free text is marked unless explicitly turned off (see isHighlightedText)
+    highlighted: isHighlightedText(selected),
+    // what the canvas paints: a transparent marker falls back to the default
+    backgroundColor: isTransparent(selected.backgroundColor)
+      ? DEFAULT_HIGHLIGHT_BG
+      : selected.backgroundColor,
     strokeColor: selected.strokeColor,
+    fontFamily: selected.fontFamily,
   };
 };
 
@@ -109,7 +124,7 @@ const layerLabel = (element: ExcalidrawElement): string => {
 const selectedSticky = (
   appState: AppState,
   elements: readonly ExcalidrawElement[],
-): { backgroundColor: string; fontSize: number } | null => {
+): { backgroundColor: string; fontSize: number; fontFamily: number } | null => {
   const note = elements.find(
     (element) =>
       appState.selectedElementIds[element.id] &&
@@ -128,6 +143,7 @@ const selectedSticky = (
   return {
     backgroundColor: note.backgroundColor,
     fontSize: label?.fontSize ?? 20,
+    fontFamily: label?.fontFamily ?? appState.currentItemFontFamily,
   };
 };
 
@@ -188,6 +204,7 @@ const toNativeState = (
   hasSelection: Object.keys(appState.selectedElementIds).length > 0,
   theme: appState.theme,
   strokeColor: appState.currentItemStrokeColor,
+  fontFamily: appState.currentItemFontFamily,
   highlightColor: appState.currentItemTextHighlight
     ? appState.currentItemHighlightColor
     : null,
@@ -221,7 +238,7 @@ const toNativeState = (
     .reverse(),
 });
 
-export const BoardEditor = ({ board, theme, onApi }: Props) => {
+export const BoardEditor = ({ board, theme, dotGrid, onApi }: Props) => {
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const autosave = useMemo(
     () => createAutosave(board.id, board.files.map((file) => file.id)),
@@ -257,7 +274,7 @@ export const BoardEditor = ({ board, theme, onApi }: Props) => {
       initialData={initialData}
       theme={theme}
       langCode="pt-BR"
-      UIOptions={UI_OPTIONS}
+      UIOptions={dotGrid ? DOT_GRID_UI_OPTIONS : UI_OPTIONS}
       handleKeyboardGlobally={true}
       autoFocus={true}
       onExcalidrawAPI={(api) => {

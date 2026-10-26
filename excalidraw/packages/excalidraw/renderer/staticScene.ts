@@ -89,6 +89,55 @@ const GridLineColor = {
   },
 } as const;
 
+/** scene distance between dots at 100% zoom */
+const DOT_GRID_SPACING = 24;
+/** on-screen spacing range: outside it the dots halve/double their spacing */
+const DOT_GRID_MIN_SCREEN_SPACING = 14;
+const DOT_GRID_RADIUS = 1.1;
+const DOT_GRID_COLOR = {
+  [THEME.LIGHT]: "rgba(0, 0, 0, 0.2)",
+  [THEME.DARK]: "rgba(255, 255, 255, 0.17)",
+} as const;
+
+/**
+ * Whiteboard dots, drawn in screen (CSS pixel) space so they stay round and
+ * crisp at any zoom; their positions are scene positions, so they move and
+ * spread with scroll and zoom.
+ */
+export const fillDotGrid = (
+  context: CanvasRenderingContext2D,
+  scrollX: number,
+  scrollY: number,
+  zoom: number,
+  theme: StaticCanvasRenderConfig["theme"],
+  width: number,
+  height: number,
+) => {
+  let spacing = DOT_GRID_SPACING;
+  while (spacing * zoom < DOT_GRID_MIN_SCREEN_SPACING) {
+    spacing *= 2;
+  }
+  while (spacing * zoom >= DOT_GRID_MIN_SCREEN_SPACING * 2) {
+    spacing /= 2;
+  }
+  const step = spacing * zoom;
+  // the first dot left/above the viewport, in screen pixels
+  const startX = (((scrollX % spacing) + spacing) % spacing) * zoom;
+  const startY = (((scrollY % spacing) + spacing) % spacing) * zoom;
+
+  context.save();
+  context.fillStyle = DOT_GRID_COLOR[theme];
+  context.beginPath();
+  for (let x = startX; x < width + step; x += step) {
+    for (let y = startY; y < height + step; y += step) {
+      context.moveTo(x + DOT_GRID_RADIUS, y);
+      context.arc(x, y, DOT_GRID_RADIUS, 0, Math.PI * 2);
+    }
+  }
+  context.fill();
+  context.restore();
+};
+
 const strokeGrid = (
   context: CanvasRenderingContext2D,
   /** grid cell pixel size */
@@ -364,6 +413,18 @@ const _renderStaticScene = ({
     isExporting,
     viewBackgroundColor: appState.viewBackgroundColor,
   });
+
+  if (renderConfig.renderDotGrid && !renderGrid && !isExporting) {
+    fillDotGrid(
+      context,
+      appState.scrollX,
+      appState.scrollY,
+      appState.zoom.value,
+      renderConfig.theme,
+      normalizedWidth,
+      normalizedHeight,
+    );
+  }
 
   // Apply zoom
   context.scale(appState.zoom.value, appState.zoom.value);

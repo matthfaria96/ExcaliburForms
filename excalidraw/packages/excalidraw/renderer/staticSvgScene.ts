@@ -12,6 +12,7 @@ import {
   applyDarkModeFilter,
   DEFAULT_HIGHLIGHT_BG,
   getReadableTextColor,
+  getStickyNoteFooterColor,
   isTransparent,
   MIME_TYPES,
   STICKY_NOTE_EDGE_SHADOW_OPACITY,
@@ -250,10 +251,7 @@ const renderElementToSvg = (
         dateText.setAttribute("direction", "ltr");
         dateText.setAttribute(
           "fill",
-          applyDarkModeFilter(
-            element.strokeColor,
-            renderConfig.theme === THEME.DARK,
-          ),
+          getStickyNoteFooterColor(element.backgroundColor),
         );
         dateText.setAttribute("fill-opacity", `${STICKY_NOTE_FOOTER.opacity}`);
         dateText.textContent = footer.text;

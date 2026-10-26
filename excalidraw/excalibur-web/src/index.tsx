@@ -51,6 +51,8 @@ export type ExcaliburHostApi = {
   flush: () => void;
   setTool: (tool: string) => boolean;
   setTheme: (theme: string) => void;
+  /** shows/hides the whiteboard dots */
+  setDotGrid: (enabled: boolean) => void;
   /** sets the text tool's default marker (`null` turns the marker off) */
   setHighlight: (color: string | null) => void;
   /** sets the text tool's default text color */
@@ -80,6 +82,7 @@ const Root = () => {
       ? "dark"
       : "light",
   );
+  const [dotGrid, setDotGrid] = useState(true);
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const autosaveRef = useRef<Autosave | null>(null);
 
@@ -106,6 +109,7 @@ const Root = () => {
         return true;
       },
       setTheme: (next) => setTheme(next === "dark" ? "dark" : "light"),
+      setDotGrid: (enabled) => setDotGrid(enabled === true),
       setHighlight: (color) => {
         const api = requireApi();
         if (color === null) {
@@ -169,6 +173,7 @@ const Root = () => {
       key={board.id}
       board={board}
       theme={theme}
+      dotGrid={dotGrid}
       onApi={(api, autosave) => {
         apiRef.current = api;
         autosaveRef.current = autosave;

@@ -48,6 +48,12 @@ export type StaticCanvasRenderConfig = {
   // ---------------------------------------------------------------------------
   imageCache: AppClassProperties["imageCache"];
   renderGrid: boolean;
+  /**
+   * Dotted canvas backdrop that follows zoom and scroll (see
+   * `UIOptions.dotGrid`). Never part of exports. Ignored while the line grid
+   * is on.
+   */
+  renderDotGrid?: boolean;
   /** whether to render link icons on elements with links (never rendered
    when exporting). @default true */
   renderLinks?: boolean;

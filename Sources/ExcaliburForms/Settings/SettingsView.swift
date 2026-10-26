@@ -35,6 +35,8 @@ struct SettingsView: View {
 
 private struct GeneralSettingsView: View {
     @AppStorage("appearance") private var appearance: Appearance = .system
+    @AppStorage("dotGrid") private var dotGrid = true
+    @EnvironmentObject private var editor: EditorController
     @AppStorage(ExportSettings.scaleKey) private var exportScale: Double = 2
     @AppStorage(ExportSettings.backgroundKey) private var exportBackground = true
 
@@ -44,8 +46,10 @@ private struct GeneralSettingsView: View {
                 Picker("Aparência", selection: $appearance) {
                     ForEach(Appearance.allCases) { Text($0.label).tag($0) }
                 }
+                Toggle("Pontos no fundo do quadro", isOn: $dotGrid)
+                    .onChange(of: dotGrid) { _, enabled in editor.setDotGrid(enabled) }
             } footer: {
-                Text("\"Sistema\" acompanha o modo claro ou escuro do Mac.")
+                Text("\"Sistema\" acompanha o modo claro ou escuro do Mac. Os pontos mostram o zoom: se afastam ao aproximar e se juntam ao afastar.")
                     .settingsFooter()
             }
 

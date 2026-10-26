@@ -71,6 +71,9 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 
 23. Redesenho da UI (macOS 27): título da janela = nome do quadro; barra com só painel, uma cápsula de ferramentas (formas lembram a última usada) e Compartilhar; aparência saiu da barra para **Ajustes (⌘,)** no padrão do MacDash (Geral + Sobre + Licenças); painel de quadros/camadas de vidro com "+" no topo (sem botões duplicados); **inspetor no rodapé** adaptável (uma linha, duas linhas ou rolagem conforme a largura) com estilo de texto/nota/forma e ações da seleção; menus como nos apps da Apple (Arquivo › Exportar, Visualizar, Organizar, Ajuda › Atalhos); desfazer/refazer saiu do rodapé do editor; formas/setas/desenho ganharam cor, preenchimento, espessura e estilo do traço; exportação com resolução e fundo configuráveis; app em pt-BR (`CFBundleDevelopmentRegion`); ícone novo no estilo Freeform (`scripts/make-icon.py`, precisa de numpy + Pillow num venv).
 
+24. Correções: cor do texto não mudava (a legibilidade sobre o grifo exigia contraste 4,5 e escurecia quase toda cor; agora só ajusta abaixo de 2,0, quando texto e grifo quase se confundem); inspetor mostrava "sem marca-texto" em texto grifado por padrão; data no canto da nota segue a cor da nota (`getStickyNoteFooterColor`); fonte (À mão/Normal/Destaque/Código) para texto e notas; **pontos no fundo** como no Freeform (`UIOptions.dotGrid`, espaçamento adaptativo ao zoom, nunca exportado; liga/desliga em Ajustes).
+- Testes JS rodando em paralelo podem falhar por falta de recursos da máquina (timeouts, "number of renders"); repetir os arquivos com `--no-file-parallelism` antes de concluir que é regressão.
+
 ## Estado atual / pendências
 
 - **Verificar no app real** os 8 critérios de conclusão (colar screenshot do clipboard, arrastar/soltar no WKWebView, recorte, camadas, fechar/reabrir, exportação, exclusão de quadros) — interativo, não automatizável aqui.

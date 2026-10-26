@@ -19,6 +19,8 @@ export type NativeMessage =
       theme: "light" | "dark";
       /** the text tool's default text color */
       strokeColor: string;
+      /** the text and note tools' default font family */
+      fontFamily: number;
       /** the text tool's default marker color; `null` when the marker is off */
       highlightColor: string | null;
       /** the selected text element's properties, if a text is selected */
@@ -29,6 +31,7 @@ export type NativeMessage =
         highlighted: boolean;
         backgroundColor: string;
         strokeColor: string;
+        fontFamily: number;
       } | null;
       /** every visible element, front-most first */
       layers: {
@@ -41,6 +44,7 @@ export type NativeMessage =
       sticky: {
         backgroundColor: string;
         fontSize: number;
+        fontFamily: number;
       } | null;
       /** style of the selected shapes/arrows/drawings or the shape tool */
       shape: {

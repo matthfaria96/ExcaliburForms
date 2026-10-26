@@ -5,6 +5,8 @@ import {
   DEFAULT_HIGHLIGHT_BG,
   HIGHLIGHT_BACKGROUND_PICKS,
   getFontString,
+  getReadableTextColor,
+  getStickyNoteFooterColor,
 } from "@excalidraw/common";
 import {
   getTextHighlightRects,
@@ -292,5 +294,38 @@ describe("api.executeAction", () => {
       h.app.api.executeAction("undo");
     });
     expect(h.elements.filter((element) => !element.isDeleted)).toHaveLength(0);
+  });
+});
+
+describe("text color on a marker", () => {
+  it("keeps the picked color when it reads on the marker", () => {
+    expect(getReadableTextColor("#ff3b30", "#ffe600")).toBe("#ff3b30");
+    expect(getReadableTextColor("#007aff", "#ffe600")).toBe("#007aff");
+    expect(getReadableTextColor("#af52de", "#00e5ff")).toBe("#af52de");
+  });
+
+  it("only adjusts text that nearly vanishes on its marker", () => {
+    const adjusted = getReadableTextColor("#ffe600", "#ffe600");
+    expect(adjusted).not.toBe("#ffe600");
+  });
+
+  it("applies a picked color to the selected text", async () => {
+    await render(<Excalidraw handleKeyboardGlobally={true} />);
+    const text = API.createElement({ type: "text", id: "c1", text: "hi" });
+    API.setElements([text]);
+    API.setSelectedElements([text]);
+    act(() => {
+      h.app.api.executeAction("changeStrokeColor", { color: "#ff3b30" });
+    });
+    expect(h.elements[0].strokeColor).toBe("#ff3b30");
+  });
+});
+
+describe("sticky note footer", () => {
+  it("follows the note color", () => {
+    const yellow = getStickyNoteFooterColor("#ffd93d");
+    const pink = getStickyNoteFooterColor("#ff6fa5");
+    expect(yellow).not.toBe(pink);
+    expect(yellow).not.toBe("#ffd93d");
   });
 });

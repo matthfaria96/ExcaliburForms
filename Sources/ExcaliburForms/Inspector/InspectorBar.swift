@@ -51,6 +51,7 @@ struct InspectorBar: View {
         } else if editor.textSelection != nil || editor.activeTool == .text {
             textControls
         } else if editor.activeTool == .stickynote {
+            fontMenu(current: editor.fontFamily)
             fontSizePicker(current: nil)
         } else if let shape = editor.shapeSelection {
             shapeControls(shape)
@@ -93,6 +94,7 @@ struct InspectorBar: View {
             }
         }
         InspectorDivider()
+        fontMenu(current: text?.fontFamily ?? editor.fontFamily)
         fontSizePicker(current: text?.fontSize)
         InspectorDivider()
         SegmentedIcons(
@@ -127,7 +129,38 @@ struct InspectorBar: View {
             if let hex { editor.performAction("changeBackgroundColor", value: ["color": hex]) }
         }
         InspectorDivider()
+        fontMenu(current: sticky.fontFamily)
         fontSizePicker(current: sticky.fontSize)
+    }
+
+    /// Fonte: "Aa" com a prévia; o menu mostra cada fonte no seu estilo.
+    private func fontMenu(current: Int) -> some View {
+        let selected = FontChoice(rawValue: current)
+        return Menu {
+            ForEach(FontChoice.allCases) { font in
+                Button {
+                    editor.setFontFamily(font)
+                } label: {
+                    if font == selected {
+                        Label(font.label, systemImage: "checkmark")
+                    } else {
+                        Text(font.label)
+                    }
+                }
+            }
+        } label: {
+            // um só Text: o menu sem borda não reordena as partes
+            (Text("Aa").font((selected ?? .handwritten).previewFont)
+                + Text(" ")
+                + Text(Image(systemName: "chevron.down")).font(.system(size: 7, weight: .bold)))
+            .frame(height: 26)
+            .padding(.horizontal, 6)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Fonte: \(selected?.label ?? "outra")")
     }
 
     @ViewBuilder

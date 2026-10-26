@@ -27,6 +27,7 @@ import {
   isSafari,
   DEFAULT_HIGHLIGHT_BG,
   getReadableTextColor,
+  getStickyNoteFooterColor,
   isTransparent,
   STICKY_NOTE_EDGE_SHADOW_OPACITY,
   STICKY_NOTE_EDGE_SHADOW_WIDTH,
@@ -493,10 +494,7 @@ const drawElementOnCanvas = (
           context.font = `${STICKY_NOTE_FOOTER.fontSize}px ${STICKY_NOTE_FOOTER.fontFamily}`;
           context.textAlign = "right";
           context.textBaseline = "alphabetic";
-          context.fillStyle = applyDarkModeFilter(
-            element.strokeColor,
-            renderConfig.theme === THEME.DARK,
-          );
+          context.fillStyle = getStickyNoteFooterColor(element.backgroundColor);
           context.globalAlpha *= STICKY_NOTE_FOOTER.opacity;
           context.fillText(footer.text, footer.x, footer.y);
         }

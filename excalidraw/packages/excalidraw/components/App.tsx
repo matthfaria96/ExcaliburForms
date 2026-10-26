@@ -2677,6 +2677,9 @@ class App extends React.Component<AppProps, AppState> {
                               scale: this.ownerWindow.devicePixelRatio,
                               renderEnvironment: this.renderEnvironment,
                               renderGrid: isGridModeEnabled(this),
+                              renderDotGrid:
+                                !!this.props.UIOptions.dotGrid &&
+                                !isGridModeEnabled(this),
                               renderLinks: this.isLinksEnabled(),
                               canvasBackgroundColor:
                                 this.state.viewBackgroundColor,

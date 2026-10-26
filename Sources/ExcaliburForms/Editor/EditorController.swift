@@ -32,6 +32,8 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var hasSelection = false
     @Published private(set) var editorTheme: EditorTheme = .light
     @Published private(set) var strokeColor: String? = TextColor.defaultHex
+    /// Fonte padrão das ferramentas texto e nota.
+    @Published private(set) var fontFamily: Int = FontChoice.handwritten.rawValue
     @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
     @Published private(set) var textSelection: TextSelection?
     @Published private(set) var stickySelection: StickySelection?
@@ -48,6 +50,7 @@ final class EditorController: NSObject, ObservableObject {
     private var currentBoardID: Board.ID?
     private var pendingBoardID: Board.ID?
     private var desiredTheme: EditorTheme = .light
+    private var desiredDotGrid = UserDefaults.standard.object(forKey: "dotGrid") as? Bool ?? true
 
     static let messageHandlerName = "excalibur"
 
@@ -92,6 +95,7 @@ final class EditorController: NSObject, ObservableObject {
         case "ready":
             isReady = true
             invoke("window.excalibur.setTheme(theme)", arguments: ["theme": desiredTheme.rawValue])
+            invoke("window.excalibur.setDotGrid(enabled)", arguments: ["enabled": desiredDotGrid])
             if let id = pendingBoardID, let board = library.boards.first(where: { $0.id == id }) {
                 pendingBoardID = nil
                 loadBoardNow(board)
@@ -132,6 +136,7 @@ final class EditorController: NSObject, ObservableObject {
             editorTheme = theme == "dark" ? .dark : .light
         }
         strokeColor = body["strokeColor"] as? String
+        fontFamily = body["fontFamily"] as? Int ?? fontFamily
         highlightColor = body["highlightColor"] as? String
 
         if let text = body["text"] as? [String: Any],
@@ -144,7 +149,8 @@ final class EditorController: NSObject, ObservableObject {
                 textAlign: textAlign,
                 highlighted: text["highlighted"] as? Bool ?? false,
                 backgroundColor: text["backgroundColor"] as? String ?? "transparent",
-                strokeColor: text["strokeColor"] as? String ?? "#1e1e1e"
+                strokeColor: text["strokeColor"] as? String ?? "#1e1e1e",
+                fontFamily: text["fontFamily"] as? Int ?? fontFamily
             )
         } else {
             textSelection = nil
@@ -155,7 +161,8 @@ final class EditorController: NSObject, ObservableObject {
            let fontSize = sticky["fontSize"] as? Double {
             stickySelection = StickySelection(
                 backgroundColor: backgroundColor,
-                fontSize: fontSize
+                fontSize: fontSize,
+                fontFamily: sticky["fontFamily"] as? Int ?? fontFamily
             )
         } else {
             stickySelection = nil
@@ -215,6 +222,17 @@ final class EditorController: NSObject, ObservableObject {
 
     func setTool(_ tool: Tool) {
         invoke("window.excalibur.setTool(tool)", arguments: ["tool": tool.rawValue])
+    }
+
+    /// Liga/desliga os pontos do fundo (Ajustes › Geral).
+    func setDotGrid(_ enabled: Bool) {
+        desiredDotGrid = enabled
+        invoke("window.excalibur.setDotGrid(enabled)", arguments: ["enabled": enabled])
+    }
+
+    /// Fonte do texto/nota selecionado, ou a padrão sem seleção.
+    func setFontFamily(_ font: FontChoice) {
+        performAction("changeFontFamily", value: ["currentItemFontFamily": font.rawValue])
     }
 
     func setTheme(_ theme: EditorTheme) {

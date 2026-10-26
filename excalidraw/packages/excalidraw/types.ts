@@ -1188,6 +1188,15 @@ export type UIOptions = Partial<{
    */
   minimalUI?: boolean;
   /**
+   * Draws a dotted backdrop on the canvas (like a whiteboard): the dots
+   * follow scroll and zoom, so their spacing shows how far you're zoomed;
+   * the spacing halves/doubles at the extremes to keep a steady density.
+   * Never exported.
+   *
+   * @default false
+   */
+  dotGrid?: boolean;
+  /**
    * Optionally control the editor form factor and desktop UI mode from the host app.
    * If not provided, we will take care of it internally.
    */

@@ -246,6 +246,36 @@ struct LayerItem: Identifiable, Equatable {
 struct StickySelection: Equatable {
     var backgroundColor: String
     var fontSize: Double
+    var fontFamily: Int
+}
+
+/// Fontes oferecidas para texto e notas (ids `FONT_FAMILY` do editor).
+enum FontChoice: Int, CaseIterable, Identifiable {
+    case handwritten = 5
+    case normal = 6
+    case display = 7
+    case code = 8
+
+    var id: Int { rawValue }
+
+    var label: String {
+        switch self {
+        case .handwritten: return "À mão"
+        case .normal: return "Normal"
+        case .display: return "Destaque"
+        case .code: return "Código"
+        }
+    }
+
+    /// Aproximação nativa só para a prévia no menu.
+    var previewFont: Font {
+        switch self {
+        case .handwritten: return .custom("Marker Felt", size: 13)
+        case .normal: return .system(size: 13, design: .rounded)
+        case .display: return .system(size: 13, weight: .black, design: .rounded)
+        case .code: return .system(size: 12, design: .monospaced)
+        }
+    }
 }
 
 /// Cores de fundo da nota adesiva.
@@ -271,6 +301,7 @@ struct TextSelection: Equatable {
     var highlighted: Bool
     var backgroundColor: String
     var strokeColor: String
+    var fontFamily: Int
 
     static let sizes: [Double] = [16, 20, 28, 36]
     static let sizeLabels: [Double: String] = [16: "S", 20: "M", 28: "L", 36: "XL"]

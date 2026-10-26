@@ -38,6 +38,7 @@ struct ExcaliburFormsApp: App {
 
         Settings {
             SettingsView()
+                .environmentObject(editor)
         }
     }
 }
