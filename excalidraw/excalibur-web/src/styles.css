@@ -1,0 +1,27 @@
+/* The page is only the canvas: the native window draws the chrome. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background: #ffffff;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #121212;
+  }
+}
+
+/* system font for the editor's own panels, like the rest of the app */
+.excalidraw {
+  --ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
+}

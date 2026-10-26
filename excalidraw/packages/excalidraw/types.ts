@@ -58,7 +58,7 @@ import type {
 } from "@excalidraw/element";
 import type { GlobalPoint } from "@excalidraw/math";
 
-import type { Action } from "./actions/types";
+import type { Action, ActionName } from "./actions/types";
 import type { Spreadsheet } from "./charts";
 import type { ClipboardData } from "./clipboard";
 import type App from "./components/App";
@@ -1464,6 +1464,12 @@ export interface ExcalidrawImperativeAPI {
     typeof App
   >["setElementRenderOverrides"];
   registerAction: (action: Action) => void;
+  /**
+   * Runs a registered action by name, as the host (`"api"` source) — e.g. to
+   * drive undo/redo, zoom or z-order from a host menu. Returns `false` when no
+   * action has that name.
+   */
+  executeAction: (name: ActionName, value?: unknown) => boolean;
   refresh: InstanceType<typeof App>["refresh"];
   setToast: InstanceType<typeof App>["setToast"];
   addFiles: (data: BinaryFileData[]) => void;

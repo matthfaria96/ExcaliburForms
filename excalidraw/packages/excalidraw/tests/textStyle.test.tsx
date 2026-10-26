@@ -264,3 +264,33 @@ describe("svg export", () => {
     ).toBeTruthy();
   });
 });
+
+describe("api.executeAction", () => {
+  beforeEach(async () => {
+    await render(<Excalidraw handleKeyboardGlobally={true} />);
+  });
+
+  it("runs registered actions by name and rejects unknown ones", () => {
+    const zoom = h.state.zoom.value;
+    let ran = false;
+    act(() => {
+      ran = h.app.api.executeAction("zoomIn");
+    });
+    expect(ran).toBe(true);
+    expect(h.state.zoom.value).toBeGreaterThan(zoom);
+    expect(h.app.api.executeAction("nope" as any)).toBe(false);
+  });
+
+  it("undoes through the history action", () => {
+    API.setElements([]);
+    const text = API.createElement({ type: "text", id: "t3", text: "hi" });
+    API.updateScene({
+      elements: [text],
+      captureUpdate: "IMMEDIATELY",
+    });
+    act(() => {
+      h.app.api.executeAction("undo");
+    });
+    expect(h.elements.filter((element) => !element.isDeleted)).toHaveLength(0);
+  });
+});
