@@ -44,6 +44,9 @@ const toNativeState = (appState: AppState) => ({
   tool: getActiveToolId(appState),
   hasSelection: Object.keys(appState.selectedElementIds).length > 0,
   theme: appState.theme,
+  highlightColor: appState.currentItemTextHighlight
+    ? appState.currentItemHighlightColor
+    : null,
 });
 
 export const BoardEditor = ({ board, theme, onApi }: Props) => {

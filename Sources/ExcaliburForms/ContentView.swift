@@ -61,6 +61,7 @@ struct ContentView: View {
             ToolButton(tool: .text, isActive: editor.activeTool == .text) {
                 editor.setTool(.text)
             }
+            highlightSwatch
             ToolButton(tool: .stickynote, isActive: editor.activeTool == .stickynote) {
                 editor.setTool(.stickynote)
             }
@@ -121,6 +122,57 @@ struct ContentView: View {
             return Color.primary.opacity(0.07)
         }
         return .clear
+    }
+
+    /// Cor padrão do grifo da ferramenta texto: um ponto ao lado do ícone que
+    /// abre o seletor (desligado, amarelo, ciano, verde, rosa, violeta).
+    private var highlightSwatch: some View {
+        Menu {
+            Button {
+                editor.setHighlight(nil)
+            } label: {
+                Label("Sem grifo", systemImage: "line.diagonal")
+            }
+            Divider()
+            ForEach(HighlightColor.options) { option in
+                Button {
+                    editor.setHighlight(option.hex)
+                } label: {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color(hexString: option.hex))
+                            .frame(width: 12, height: 12)
+                        Text(option.name)
+                        if editor.highlightColor == option.hex {
+                            Spacer()
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            swatchLabel
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Cor padrão do grifo")
+    }
+
+    private var swatchLabel: some View {
+        ZStack {
+            if let hex = editor.highlightColor {
+                Circle().fill(Color(hexString: hex))
+                Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+            } else {
+                Circle().strokeBorder(Color.secondary, lineWidth: 1.5)
+                Image(systemName: "line.diagonal")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 20, height: 20)
+        .contentShape(Rectangle())
     }
 
     private var exportMenu: some View {

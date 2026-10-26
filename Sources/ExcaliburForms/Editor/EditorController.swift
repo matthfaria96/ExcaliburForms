@@ -31,6 +31,7 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var activeTool: Tool?
     @Published private(set) var hasSelection = false
     @Published private(set) var editorTheme: EditorTheme = .light
+    @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
     @Published var lastError: String?
 
     let webView: WKWebView
@@ -120,6 +121,7 @@ final class EditorController: NSObject, ObservableObject {
         if let theme = body["theme"] as? String {
             editorTheme = theme == "dark" ? .dark : .light
         }
+        highlightColor = body["highlightColor"] as? String
     }
 
     // MARK: - Chamadas à página
@@ -150,6 +152,11 @@ final class EditorController: NSObject, ObservableObject {
     func setTheme(_ theme: EditorTheme) {
         desiredTheme = theme
         invoke("window.excalibur.setTheme(theme)", arguments: ["theme": theme.rawValue])
+    }
+
+    /// Define a cor padrão do marca-texto da ferramenta texto (`nil` desliga).
+    func setHighlight(_ color: String?) {
+        invoke("window.excalibur.setHighlight(color)", arguments: ["color": color ?? NSNull()])
     }
 
     func command(_ command: Command) {

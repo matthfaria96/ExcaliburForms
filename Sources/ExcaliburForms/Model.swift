@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Ferramentas expostas na barra nativa. Os `rawValue` são os mesmos ids de
 /// `excalibur-web/src/tools.ts`, para a ponte não precisar de tradução.
@@ -173,5 +174,35 @@ enum ExportScope: String, CaseIterable, Identifiable, Sendable {
         case .selection: return "Seleção"
         case .viewport: return "Área visível"
         }
+    }
+}
+
+/// Cor de fundo do marca-texto que a ferramenta texto usa por padrão.
+struct HighlightColor: Identifiable, Equatable {
+    let hex: String
+    let name: String
+    var id: String { hex }
+
+    static let options: [HighlightColor] = [
+        HighlightColor(hex: "#ffd43b", name: "Amarelo"),
+        HighlightColor(hex: "#3bc9db", name: "Ciano"),
+        HighlightColor(hex: "#69db7c", name: "Verde"),
+        HighlightColor(hex: "#f783ac", name: "Rosa"),
+        HighlightColor(hex: "#9775fa", name: "Violeta"),
+    ]
+
+    static let defaultHex = "#ffd43b"
+}
+
+extension Color {
+    init(hexString: String) {
+        let cleaned = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var value: UInt64 = 0
+        Scanner(string: cleaned).scanHexInt64(&value)
+        self.init(
+            red: Double((value >> 16) & 0xff) / 255,
+            green: Double((value >> 8) & 0xff) / 255,
+            blue: Double(value & 0xff) / 255
+        )
     }
 }

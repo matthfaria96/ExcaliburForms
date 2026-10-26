@@ -37,10 +37,7 @@ export const getActiveToolId = (
 };
 
 export const activateTool = (api: ExcalidrawImperativeAPI, tool: ToolId) => {
-  // picking the text tool always starts as plain text; the marker is a toggle
-  if (tool === "text") {
-    api.updateScene({ appState: { currentItemTextHighlight: false } });
-  }
+  // the text tool keeps its current default (marker on/off and its color)
   api.setActiveTool({
     type: tool,
   } as Parameters<ExcalidrawImperativeAPI["setActiveTool"]>[0]);
@@ -53,9 +50,7 @@ const isEditableTarget = (target: EventTarget | null) =>
     target.tagName === "TEXTAREA");
 
 /**
- * Keys the editor doesn't know: `M` toggles the marker on the text tool, and
- * the editor's own text keys (`T`, `8`) pick plain text — otherwise they'd
- * keep the marker preset of the last use.
+ * Keys the editor doesn't know: `M` toggles the marker on the text tool.
  */
 export const installToolShortcuts = (
   getApi: () => ExcalidrawImperativeAPI | null,
@@ -78,8 +73,6 @@ export const installToolShortcuts = (
       const highlighted = !api.getAppState().currentItemTextHighlight;
       api.updateScene({ appState: { currentItemTextHighlight: highlighted } });
       api.setActiveTool({ type: "text" });
-    } else if (key === "t" || key === "8") {
-      api.updateScene({ appState: { currentItemTextHighlight: false } });
     }
   };
   window.addEventListener("keydown", onKeyDown, { capture: true });

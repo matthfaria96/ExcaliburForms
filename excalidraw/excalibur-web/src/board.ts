@@ -1,3 +1,5 @@
+import { DEFAULT_HIGHLIGHT_BG } from "@excalidraw/common";
+
 import type {
   BinaryFileData,
   BinaryFiles,
@@ -46,7 +48,15 @@ export const toInitialData = (
     board.files.map((file) => [file.id, file]),
   );
   if (!board.scene) {
-    return { files, scrollToContent: true };
+    // new board: text starts as a highlighted marker by default
+    return {
+      files,
+      scrollToContent: true,
+      appState: {
+        currentItemTextHighlight: true,
+        currentItemHighlightColor: DEFAULT_HIGHLIGHT_BG,
+      },
+    };
   }
   const parsed = JSON.parse(board.scene) as Record<string, unknown>;
   return {

@@ -285,12 +285,12 @@ export const STICKY_NOTE_BACKGROUND_PICKS = [
 // (that would hide the marker).
 export const DEFAULT_HIGHLIGHT_BG = COLOR_PALETTE.yellow[2];
 
-// ORDER matters for positioning in quick picker: yellow, green, blue, pink,
+// ORDER matters for positioning in quick picker: yellow, cyan, green, pink,
 // purple; the first one is `DEFAULT_HIGHLIGHT_BG`.
 export const HIGHLIGHT_BACKGROUND_PICKS = [
   DEFAULT_HIGHLIGHT_BG,
+  COLOR_PALETTE.cyan[2],
   COLOR_PALETTE.green[2],
-  COLOR_PALETTE.blue[2],
   COLOR_PALETTE.pink[2],
   COLOR_PALETTE.violet[2],
 ] as ColorTuple;
