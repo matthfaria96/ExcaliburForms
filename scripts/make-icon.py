@@ -32,6 +32,15 @@ def px(v):
     return int(round(v * SS))
 
 
+# tamanho dos elementos dentro do corpo (1 = original); cresce a partir do centro
+Z = 1.07
+
+
+def sc(v):
+    """Coordenada de 1024 escalada por Z em torno do centro do ícone."""
+    return 512 + (v - 512) * Z
+
+
 def squircle_mask(box, n=5.0):
     """Superelipse (|x|^n + |y|^n <= 1) no retângulo `box`, como os ícones do macOS."""
     x0, y0, x1, y1 = box
@@ -78,14 +87,16 @@ canvas = Image.alpha_composite(canvas, layer(body, body_mask))
 
 # --- círculo quente (marca-texto): amarelo → laranja -------------------------
 circle_mask = Image.new("L", (W, W), 0)
-ImageDraw.Draw(circle_mask).ellipse([px(212), px(408), px(612), px(808)], fill=255)
+# maior e mais para dentro do cartão azul
+ImageDraw.Draw(circle_mask).ellipse([px(sc(215)), px(sc(375)), px(sc(665)), px(sc(825))], fill=255)
 canvas = Image.alpha_composite(canvas, soft_shadow(circle_mask, 14, 22, 0.22, (120, 60, 0)))
-circle = gradient((255, 214, 64), (255, 112, 67), (412, 410), (412, 806))
+# contraste maior: amarelo-ouro no alto, laranja-avermelhado embaixo
+circle = gradient((255, 202, 0), (255, 78, 36), (sc(440), sc(380)), (sc(440), sc(820)))
 canvas = Image.alpha_composite(canvas, layer(circle, circle_mask))
 circle_layer = layer(circle, circle_mask)
 # brilho suave no alto do círculo
 gloss = Image.new("L", (W, W), 0)
-ImageDraw.Draw(gloss).ellipse([px(262), px(430), px(520), px(600)], fill=120)
+ImageDraw.Draw(gloss).ellipse([px(sc(270)), px(sc(400)), px(sc(540)), px(sc(580))], fill=110)
 gloss = ImageChops.multiply(gloss.filter(ImageFilter.GaussianBlur(px(40))), circle_mask)
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), gloss))
 circle_layer = Image.alpha_composite(
@@ -93,25 +104,25 @@ circle_layer = Image.alpha_composite(
 )
 
 # --- cartão de vidro azul, translúcido, por cima do círculo ------------------
-card_box = [px(420), px(222), px(812), px(614)]
+card_box = [px(sc(420)), px(sc(222)), px(sc(812)), px(sc(614))]
 card_mask = Image.new("L", (W, W), 0)
-ImageDraw.Draw(card_mask).rounded_rectangle(card_box, radius=px(92), fill=255)
+ImageDraw.Draw(card_mask).rounded_rectangle(card_box, radius=px(92 * Z), fill=255)
 canvas = Image.alpha_composite(canvas, soft_shadow(card_mask, 16, 26, 0.20, (0, 60, 140)))
 # o que fica atrás do cartão aparece desfocado (vidro)
 behind = canvas.filter(ImageFilter.GaussianBlur(px(6)))
 canvas = Image.composite(behind, canvas, card_mask)
-card = gradient((92, 220, 255), (36, 140, 255), (440, 230), (800, 610))
+card = gradient((40, 212, 255), (16, 104, 255), (sc(440), sc(230)), (sc(800), sc(610)))
 canvas = Image.alpha_composite(canvas, layer(card, card_mask, 0.66))
 card_layer = layer(card, card_mask)
 # reflexo no topo e aro claro
 sheen = Image.new("L", (W, W), 0)
-ImageDraw.Draw(sheen).ellipse([px(380), px(120), px(880), px(420)], fill=90)
+ImageDraw.Draw(sheen).ellipse([px(sc(380)), px(sc(120)), px(sc(880)), px(sc(420))], fill=80)
 sheen = ImageChops.multiply(sheen.filter(ImageFilter.GaussianBlur(px(36))), card_mask)
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), sheen))
 inner = Image.new("L", (W, W), 0)
 ImageDraw.Draw(inner).rounded_rectangle(
     [card_box[0] + px(4), card_box[1] + px(4), card_box[2] - px(4), card_box[3] - px(4)],
-    radius=px(88), fill=255,
+    radius=px(88 * Z), fill=255,
 )
 rim = ImageChops.subtract(card_mask, inner)
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), rim, 0.55))
@@ -129,7 +140,7 @@ def scribble():
         y = -k * math.cos(u) * 0.085 - t * 0.12
         # grossura: fina nas pontas, cheia no meio
         width = 0.35 + 0.65 * math.sin(math.pi * min(1, t * 1.15)) ** 0.6
-        pts.append((px(232) + x * px(560), px(560) + y * px(520), width))
+        pts.append((px(sc(232)) + x * px(560 * Z), px(sc(560)) + y * px(520 * Z), width))
     return pts
 
 
@@ -143,12 +154,12 @@ def stroke_mask(points, radius, dx=0, dy=0):
 
 
 pts = scribble()
-ink = stroke_mask(pts, px(30))
+ink = stroke_mask(pts, px(30 * Z))
 canvas = Image.alpha_composite(canvas, soft_shadow(ink, 14, 14, 0.35))
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (28, 28, 36, 255)), ink))
 ink_layer = layer(Image.new("RGBA", (W, W), (28, 28, 36, 255)), ink)
 # luz: um traço mais fino e claro deslocado para cima, recortado pela tinta
-highlight = ImageChops.multiply(stroke_mask(pts, px(12), dx=-5, dy=-9), ink)
+highlight = ImageChops.multiply(stroke_mask(pts, px(12 * Z), dx=-5, dy=-9), ink)
 highlight = highlight.filter(ImageFilter.GaussianBlur(px(5)))
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (150, 150, 170, 255)), highlight, 0.75))
 ink_layer = Image.alpha_composite(
