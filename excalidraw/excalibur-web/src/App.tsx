@@ -70,6 +70,36 @@ const selectedText = (
   };
 };
 
+/** a human label for the layers panel */
+const layerLabel = (element: ExcalidrawElement): string => {
+  switch (element.type) {
+    case "text":
+      return element.text?.trim().slice(0, 30) || "Texto";
+    case "image":
+      return "Imagem";
+    case "rectangle":
+      return "Retângulo";
+    case "ellipse":
+      return "Elipse";
+    case "diamond":
+      return "Losango";
+    case "arrow":
+      return "Seta";
+    case "line":
+      return "Linha";
+    case "freedraw":
+      return "Desenho";
+    case "stickynote":
+      return "Nota";
+    case "frame":
+      return "Frame";
+    case "embeddable":
+      return "Embed";
+    default:
+      return element.type;
+  }
+};
+
 /** state the native toolbar mirrors; posted only when it changes */
 const toNativeState = (
   appState: AppState,
@@ -83,6 +113,15 @@ const toNativeState = (
     ? appState.currentItemHighlightColor
     : null,
   text: selectedText(appState, elements),
+  layers: elements
+    .filter((element) => !element.isDeleted)
+    .map((element) => ({
+      id: element.id,
+      label: layerLabel(element),
+      type: element.type,
+      selected: !!appState.selectedElementIds[element.id],
+    }))
+    .reverse(),
 });
 
 export const BoardEditor = ({ board, theme, onApi }: Props) => {

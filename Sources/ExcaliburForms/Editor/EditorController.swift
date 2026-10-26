@@ -34,6 +34,7 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var strokeColor: String? = TextColor.defaultHex
     @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
     @Published private(set) var textSelection: TextSelection?
+    @Published private(set) var layers: [LayerItem] = []
     @Published var lastError: String?
 
     let webView: WKWebView
@@ -139,6 +140,19 @@ final class EditorController: NSObject, ObservableObject {
         } else {
             textSelection = nil
         }
+
+        layers = (body["layers"] as? [[String: Any]] ?? []).compactMap { dict in
+            guard let id = dict["id"] as? String,
+                  let label = dict["label"] as? String,
+                  let type = dict["type"] as? String
+            else { return nil }
+            return LayerItem(
+                id: id,
+                label: label,
+                type: type,
+                selected: dict["selected"] as? Bool ?? false
+            )
+        }
     }
 
     // MARK: - Chamadas à página
@@ -185,6 +199,11 @@ final class EditorController: NSObject, ObservableObject {
     func performAction(_ name: String, value: Any? = nil) {
         let payload: Any = value ?? NSNull()
         invoke("window.excalibur.action(name, value)", arguments: ["name": name, "value": payload])
+    }
+
+    /// Seleciona/move/apaga uma camada (front/back/up/down/delete/select).
+    func layerAction(_ id: String, _ action: String) {
+        invoke("window.excalibur.layerAction(id, action)", arguments: ["id": id, "action": action])
     }
 
     func command(_ command: Command) {

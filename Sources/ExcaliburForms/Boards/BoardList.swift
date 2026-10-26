@@ -13,7 +13,6 @@ struct BoardList: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
             List(selection: $library.selectedID) {
                 ForEach(library.boards) { board in
                     row(board)
@@ -44,18 +43,6 @@ struct BoardList: View {
                 editor.loadBoard(board)
             }
         }
-    }
-
-    private var header: some View {
-        HStack {
-            Text("Quadros")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 4)
     }
 
     // MARK: - Linhas

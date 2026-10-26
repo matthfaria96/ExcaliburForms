@@ -57,6 +57,8 @@ export type ExcaliburHostApi = {
   setStrokeColor: (color: string) => void;
   /** runs an editor action, optionally with a value (font size, align, …) */
   action: (name: string, value: unknown) => boolean;
+  /** selects a layer and optionally reorders/removes it (front/back/up/down/delete) */
+  layerAction: (id: string, action: string) => boolean;
   command: (name: string) => boolean;
   exportImage: (request: ExportRequest) => Promise<ExportResult>;
 };
@@ -117,6 +119,27 @@ const Root = () => {
       },
       action: (name, value) =>
         requireApi().executeAction(name as ActionName, value),
+      layerAction: (id, action) => {
+        const api = requireApi();
+        api.updateScene({ appState: { selectedElementIds: { [id]: true } } });
+        if (action === "select") {
+          return true;
+        }
+        const actionMap: Record<string, ActionName> = {
+          front: "bringToFront",
+          back: "sendToBack",
+          up: "bringForward",
+          down: "sendBackward",
+          delete: "deleteSelectedElements",
+        };
+        const name = actionMap[action];
+        if (!name) {
+          return false;
+        }
+        // let the selection update land before running the action
+        window.setTimeout(() => api.executeAction(name), 0);
+        return true;
+      },
       command: (name) => {
         const action = COMMANDS[name];
         return !!action && requireApi().executeAction(action);

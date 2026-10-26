@@ -27,7 +27,7 @@ struct ContentView: View {
             }
 
             if boardsVisible {
-                BoardList()
+                LeftPanel()
                     .frame(width: 250)
                     .frame(maxHeight: .infinity)
                     .background(.ultraThinMaterial)
@@ -93,7 +93,7 @@ struct ContentView: View {
                 HStack(spacing: 6) {
                     ForEach(TextColor.options.prefix(7)) { option in
                         colorDot(option.hex, selected: editor.strokeColor == option.hex) {
-                            editor.performAction("changeStrokeColor", value: option.hex)
+                            editor.performAction("changeStrokeColor", value: ["color": option.hex])
                         }
                     }
                 }
@@ -116,7 +116,7 @@ struct ContentView: View {
                     ForEach(HighlightColor.options) { option in
                         colorDot(option.hex, selected: editor.highlightColor == option.hex) {
                             editor.performAction("toggleTextHighlight", value: true)
-                            editor.performAction("changeBackgroundColor", value: option.hex)
+                            editor.performAction("changeBackgroundColor", value: ["color": option.hex])
                         }
                     }
                 }
@@ -358,19 +358,15 @@ struct ContentView: View {
                 }
             }
         } label: {
-            ZStack {
-                Circle().fill(
-                    editor.strokeColor.map { Color(hexString: $0) } ?? Color.clear
-                )
-                Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
-            }
-            .frame(width: 20, height: 20)
-            .contentShape(Rectangle())
+            swatchButton(
+                "textformat",
+                color: editor.strokeColor.map { Color(hexString: $0) }
+            )
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .help("Cor padrão do texto")
+        .help("Cor do texto")
     }
 
     /// Cor padrão do grifo da ferramenta texto: um ponto ao lado do ícone que
@@ -400,27 +396,45 @@ struct ContentView: View {
                 }
             }
         } label: {
-            swatchLabel
+            swatchButton(
+                "highlighter",
+                color: editor.highlightColor.map { Color(hexString: $0) },
+                disabled: editor.highlightColor == nil
+            )
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .help("Cor padrão do grifo")
+        .help("Cor do grifo")
     }
 
-    private var swatchLabel: some View {
-        ZStack {
-            if let hex = editor.highlightColor {
-                Circle().fill(Color(hexString: hex))
-                Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
-            } else {
-                Circle().strokeBorder(Color.secondary, lineWidth: 1.5)
-                Image(systemName: "line.diagonal")
-                    .font(.system(size: 8, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
+    /// Botão de cor da barra nativa: ícone + faixa com a cor atual.
+    private func swatchButton(
+        _ icon: String,
+        color: Color?,
+        disabled: Bool = false
+    ) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(height: 15)
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(disabled ? Color.clear : (color ?? Color.clear))
+                .frame(width: 20, height: 4)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .strokeBorder(
+                            disabled ? Color.secondary.opacity(0.6) : Color.primary.opacity(0.12),
+                            lineWidth: 1
+                        )
+                )
         }
-        .frame(width: 20, height: 20)
+        .frame(width: 30, height: 26)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        )
         .contentShape(Rectangle())
     }
 

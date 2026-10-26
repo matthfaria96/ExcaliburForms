@@ -216,6 +216,31 @@ struct TextColor: Identifiable, Equatable {
     static let defaultHex = "#1e1e1e"
 }
 
+/// Uma camada (elemento) do quadro, para o painel de camadas.
+struct LayerItem: Identifiable, Equatable {
+    let id: String
+    let label: String
+    let type: String
+    let selected: Bool
+
+    var icon: String {
+        switch type {
+        case "text": return "textformat"
+        case "image": return "photo"
+        case "rectangle": return "rectangle"
+        case "ellipse": return "circle"
+        case "diamond": return "diamond"
+        case "arrow": return "arrow.up.right"
+        case "line": return "line.diagonal"
+        case "freedraw": return "scribble"
+        case "stickynote": return "note.text"
+        case "frame": return "rectangle.dashed"
+        case "embeddable": return "globe"
+        default: return "square"
+        }
+    }
+}
+
 /// Propriedades do texto selecionado, lidas do editor para o painel da direita.
 struct TextSelection: Equatable {
     var fontSize: Double

@@ -28,6 +28,13 @@ export type NativeMessage =
         textAlign: "left" | "center" | "right";
         highlighted: boolean;
       } | null;
+      /** every visible element, front-most first */
+      layers: {
+        id: string;
+        label: string;
+        type: string;
+        selected: boolean;
+      }[];
     }
   | { type: "error"; message: string };
 
