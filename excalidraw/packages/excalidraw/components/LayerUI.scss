@@ -117,6 +117,19 @@
     }
   }
 
+  // Hosts with a minimal UI (the native app) keep the styles panel and the
+  // zoom/undo footer on the right edge instead of the left.
+  .layer-ui__wrapper--minimal {
+    .App-menu_top > .App-menu_top__left {
+      grid-column: 3;
+      justify-self: end;
+    }
+
+    .App-menu_bottom {
+      flex-direction: row-reverse;
+    }
+  }
+
   // on tablet, the pen mode button is rendered as a separate floating button
   // below the compact actions menu (see LayerUI.tsx)
   .App-menu_top__left > .ToolIcon__penMode {

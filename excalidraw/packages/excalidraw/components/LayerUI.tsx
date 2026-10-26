@@ -646,7 +646,9 @@ const LayerUI = ({
             />
           )}
           <div
-            className="layer-ui__wrapper"
+            className={clsx("layer-ui__wrapper", {
+              "layer-ui__wrapper--minimal": UIOptions.minimalUI,
+            })}
             style={
               isSidebarDockedAndFits
                 ? { width: `calc(100% - var(--right-sidebar-width))` }
