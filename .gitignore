@@ -1,0 +1,9 @@
+node_modules/
+.build/
+build/
+dist/
+.DS_Store
+.swiftpm/
+Resources/web/
+*.log
+excalidraw/.yarn-cache/
