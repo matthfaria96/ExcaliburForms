@@ -83,75 +83,34 @@ struct ContentView: View {
 
     /// Barra de propriedades no rodapé, com as opções lado a lado.
     private var propertiesBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             if let sticky = editor.stickySelection {
-                barGroup("Nota") {
-                    HStack(spacing: 6) {
-                        ForEach(StickyColor.options) { option in
-                            colorDot(option.hex, selected: sticky.backgroundColor == option.hex) {
-                                editor.performAction("changeBackgroundColor", value: ["color": option.hex])
-                            }
-                        }
-                    }
-                }
-                barDivider
                 barGroup("Tamanho") {
-                    HStack(spacing: 6) {
+                    chipGroup {
                         ForEach(TextSelection.sizes, id: \.self) { size in
                             sizeButton(size, current: sticky.fontSize)
                         }
                     }
                 }
             } else {
-                barGroup("Cor") {
-                    HStack(spacing: 6) {
-                        ForEach(TextColor.options.prefix(7)) { option in
-                            colorDot(option.hex, selected: selectedTextStroke == option.hex) {
-                                editor.performAction("changeStrokeColor", value: ["color": option.hex])
-                            }
-                        }
-                    }
-                }
-                barDivider
-                barGroup("Marca-texto") {
-                    HStack(spacing: 6) {
-                        Button {
-                            editor.performAction("toggleTextHighlight", value: false)
-                        } label: {
-                            noHighlightDot(selected: selectedTextBackground == nil)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Sem fundo")
-                        ForEach(HighlightColor.options) { option in
-                            colorDot(
-                                option.hex,
-                                selected: selectedTextBackground?.lowercased() == option.hex
-                            ) {
-                                editor.performAction("toggleTextHighlight", value: true)
-                                editor.performAction("changeBackgroundColor", value: ["color": option.hex])
-                            }
+                barGroup("Tamanho") {
+                    chipGroup {
+                        ForEach(TextSelection.sizes, id: \.self) { size in
+                            sizeButton(size, current: editor.textSelection?.fontSize)
                         }
                     }
                 }
                 if let text = editor.textSelection {
                     barDivider
-                    barGroup("Tamanho") {
-                        HStack(spacing: 6) {
-                            ForEach(TextSelection.sizes, id: \.self) { size in
-                                sizeButton(size, current: text.fontSize)
-                            }
-                        }
-                    }
-                    barDivider
                     barGroup("Peso") {
-                        HStack(spacing: 6) {
+                        chipGroup {
                             weightButton("normal", label: "Aa", current: text.fontWeight)
                             weightButton("bold", label: "Aa", current: text.fontWeight)
                         }
                     }
                     barDivider
                     barGroup("Alinhamento") {
-                        HStack(spacing: 6) {
+                        chipGroup {
                             alignButton("left", icon: "text.alignleft", current: text.textAlign)
                             alignButton("center", icon: "text.aligncenter", current: text.textAlign)
                             alignButton("right", icon: "text.alignright", current: text.textAlign)
@@ -160,15 +119,15 @@ struct ContentView: View {
                 }
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.08))
         )
-        .shadow(color: .black.opacity(0.2), radius: 18, y: 8)
+        .shadow(color: .black.opacity(0.2), radius: 20, y: 8)
     }
 
     private func barGroup<Content: View>(
@@ -177,39 +136,24 @@ struct ContentView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(size: 9, weight: .medium))
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
             content()
         }
     }
 
-    /// Cor do texto em edição: a do texto selecionado ou o padrão da ferramenta.
-    private var selectedTextStroke: String? {
-        editor.textSelection?.strokeColor ?? editor.strokeColor
-    }
-
-    /// Cor do grifo em edição: `nil` quando o texto está sem fundo.
-    private var selectedTextBackground: String? {
-        if let text = editor.textSelection {
-            return text.highlighted ? text.backgroundColor : nil
+    private func chipGroup<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        HStack(spacing: 2) {
+            content()
         }
-        return editor.highlightColor
-    }
-
-    private func noHighlightDot(selected: Bool) -> some View {
-        ZStack {
-            Circle().fill(Color.white)
-            Circle().strokeBorder(Color.black.opacity(0.15), lineWidth: 1)
-            Rectangle()
-                .fill(Color(hexString: "#ff3b30"))
-                .frame(width: 2, height: 15)
-                .rotationEffect(.degrees(45))
-            if selected {
-                Circle().strokeBorder(Color.accentColor, lineWidth: 2)
-            }
-        }
-        .frame(width: 22, height: 22)
+        .padding(3)
+        .background(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Color.primary.opacity(0.06))
+        )
     }
 
     private var barDivider: some View {
@@ -218,63 +162,53 @@ struct ContentView: View {
             .padding(.horizontal, 2)
     }
 
-    private func colorDot(_ hex: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            ZStack {
-                Circle().fill(Color(hexString: hex))
-                Circle().strokeBorder(Color.black.opacity(0.10), lineWidth: 1)
-                if selected {
-                    Circle().strokeBorder(Color.white, lineWidth: 2).padding(1)
-                    Circle().strokeBorder(Color.accentColor, lineWidth: 2)
-                }
-            }
-            .frame(width: 22, height: 22)
-        }
-        .buttonStyle(.plain)
-        .help(hex)
-    }
-
-    private func sizeButton(_ size: Double, current: Double) -> some View {
-        Button {
+    private func sizeButton(_ size: Double, current: Double?) -> some View {
+        let selected = current == size
+        return Button {
             editor.performAction("changeFontSize", value: size)
         } label: {
             Text(TextSelection.sizeLabels[size] ?? "?")
                 .font(.system(size: 11, weight: .semibold))
-                .frame(width: 34, height: 28)
-                .background(chipBackground(current == size))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .foregroundStyle(selected ? Color.white : Color.primary)
+                .frame(width: 34, height: 26)
+                .background(chipBackground(selected))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func weightButton(_ weight: String, label: String, current: String) -> some View {
-        Button {
+        let selected = current == weight
+        return Button {
             editor.performAction("changeFontWeight", value: weight)
         } label: {
             Text(label)
-                .font(.system(size: 11, weight: weight == "bold" ? .bold : .regular))
-                .frame(width: 40, height: 28)
-                .background(chipBackground(current == weight))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .font(.system(size: 12, weight: weight == "bold" ? .bold : .regular))
+                .foregroundStyle(selected ? Color.white : Color.primary)
+                .frame(width: 40, height: 26)
+                .background(chipBackground(selected))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func alignButton(_ align: String, icon: String, current: String) -> some View {
-        Button {
+        let selected = current == align
+        return Button {
             editor.performAction("changeTextAlign", value: align)
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .medium))
-                .frame(width: 32, height: 28)
-                .background(chipBackground(current == align))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .foregroundStyle(selected ? Color.white : Color.primary)
+                .frame(width: 34, height: 26)
+                .background(chipBackground(selected))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func chipBackground(_ selected: Bool) -> Color {
-        selected ? Color.accentColor.opacity(0.22) : Color.primary.opacity(0.06)
+        selected ? Color.accentColor : Color.clear
     }
 
     /// Botão flutuante no canto superior esquerdo que abre/fecha a lista de
