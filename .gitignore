@@ -7,3 +7,8 @@ dist/
 Resources/web/
 *.log
 excalidraw/.yarn-cache/
+# upstream Excalidraw ships its own public Firebase/Google keys in these
+# (used only by excalidraw-app, which this project doesn't build)
+excalidraw/.env.development
+excalidraw/.env.production
+excalidraw/.env.test
