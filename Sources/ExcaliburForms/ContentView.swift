@@ -272,10 +272,10 @@ private struct ToolButtonStyle: ButtonStyle {
             .frame(width: 32, height: 28)
             .foregroundStyle(isActive ? Color.white : Color.primary.opacity(0.85))
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                Capsule(style: .continuous)
                     .fill(fill(pressed: configuration.isPressed))
             )
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(Capsule(style: .continuous))
             .onHover { hovering = $0 }
             .animation(.easeOut(duration: 0.12), value: isActive)
     }
