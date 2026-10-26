@@ -44,13 +44,12 @@ struct ContentView: View {
                     .zIndex(2)
             }
 
-            // painel fixo de propriedades, à direita
-            propertiesPanel
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.trailing, 14)
-                .padding(.top, 14)
+            // barra de propriedades no rodapé, centralizada
+            propertiesBar
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 16)
                 .opacity(showsProperties ? 1 : 0)
-                .offset(x: showsProperties ? 0 : 14)
+                .offset(y: showsProperties ? 0 : 18)
                 .allowsHitTesting(showsProperties)
                 .animation(.smooth(duration: 0.22), value: showsProperties)
                 .zIndex(3)
@@ -82,18 +81,11 @@ struct ContentView: View {
             || editor.activeTool == .stickynote
     }
 
-    /// Painel fixo de propriedades, no canto direito (texto ou nota).
-    private var propertiesPanel: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    /// Barra de propriedades no rodapé, com as opções lado a lado.
+    private var propertiesBar: some View {
+        HStack(spacing: 12) {
             if let sticky = editor.stickySelection {
-                Text("Nota")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.secondary)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Cor")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                barGroup("Nota") {
                     HStack(spacing: 6) {
                         ForEach(StickyColor.options) { option in
                             colorDot(option.hex, selected: sticky.backgroundColor == option.hex) {
@@ -102,110 +94,101 @@ struct ContentView: View {
                         }
                     }
                 }
-
-                fontSizeSection(current: sticky.fontSize)
+                barDivider
+                barGroup("Tamanho") {
+                    HStack(spacing: 6) {
+                        ForEach(TextSelection.sizes, id: \.self) { size in
+                            sizeButton(size, current: sticky.fontSize)
+                        }
+                    }
+                }
             } else {
-                Text("Texto")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.secondary)
-
-                textColorSection()
-                highlightSection()
-
+                barGroup("Cor") {
+                    HStack(spacing: 6) {
+                        ForEach(TextColor.options.prefix(7)) { option in
+                            colorDot(option.hex, selected: editor.strokeColor == option.hex) {
+                                editor.performAction("changeStrokeColor", value: ["color": option.hex])
+                            }
+                        }
+                    }
+                }
+                barDivider
+                barGroup("Marca-texto") {
+                    HStack(spacing: 6) {
+                        Button {
+                            editor.performAction("toggleTextHighlight", value: false)
+                        } label: {
+                            Image(systemName: "line.diagonal")
+                                .font(.system(size: 11, weight: .semibold))
+                                .frame(width: 28, height: 22)
+                                .background(chipBackground(editor.highlightColor == nil))
+                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .help("Sem grifo")
+                        ForEach(HighlightColor.options) { option in
+                            colorDot(option.hex, selected: editor.highlightColor == option.hex) {
+                                editor.performAction("toggleTextHighlight", value: true)
+                                editor.performAction("changeBackgroundColor", value: ["color": option.hex])
+                            }
+                        }
+                    }
+                }
                 if let text = editor.textSelection {
-                    fontSizeSection(current: text.fontSize)
-                    weightSection(current: text.fontWeight)
-                    alignSection(current: text.textAlign)
+                    barDivider
+                    barGroup("Tamanho") {
+                        HStack(spacing: 6) {
+                            ForEach(TextSelection.sizes, id: \.self) { size in
+                                sizeButton(size, current: text.fontSize)
+                            }
+                        }
+                    }
+                    barDivider
+                    barGroup("Peso") {
+                        HStack(spacing: 6) {
+                            weightButton("normal", label: "Aa", current: text.fontWeight)
+                            weightButton("bold", label: "Aa", current: text.fontWeight)
+                        }
+                    }
+                    barDivider
+                    barGroup("Alinhamento") {
+                        HStack(spacing: 6) {
+                            alignButton("left", icon: "text.alignleft", current: text.textAlign)
+                            alignButton("center", icon: "text.aligncenter", current: text.textAlign)
+                            alignButton("right", icon: "text.alignright", current: text.textAlign)
+                        }
+                    }
                 }
             }
         }
-        .padding(16)
-        .frame(width: 240, alignment: .leading)
-        .background(.ultraThinMaterial)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.08))
         )
-        .shadow(color: .black.opacity(0.16), radius: 16, y: 6)
+        .shadow(color: .black.opacity(0.2), radius: 18, y: 8)
     }
 
-    private func textColorSection() -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Cor")
-                .font(.caption)
+    private func barGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 9, weight: .medium))
                 .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                ForEach(TextColor.options.prefix(7)) { option in
-                    colorDot(option.hex, selected: editor.strokeColor == option.hex) {
-                        editor.performAction("changeStrokeColor", value: ["color": option.hex])
-                    }
-                }
-            }
+                .textCase(.uppercase)
+            content()
         }
     }
 
-    private func highlightSection() -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Marca-texto")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("Sem grifo") {
-                    editor.performAction("toggleTextHighlight", value: false)
-                }
-                .buttonStyle(.plain)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-            HStack(spacing: 6) {
-                ForEach(HighlightColor.options) { option in
-                    colorDot(option.hex, selected: editor.highlightColor == option.hex) {
-                        editor.performAction("toggleTextHighlight", value: true)
-                        editor.performAction("changeBackgroundColor", value: ["color": option.hex])
-                    }
-                }
-            }
-        }
-    }
-
-    private func fontSizeSection(current: Double) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Tamanho")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                ForEach(TextSelection.sizes, id: \.self) { size in
-                    sizeButton(size, current: current)
-                }
-            }
-        }
-    }
-
-    private func weightSection(current: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Peso")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                weightButton("normal", label: "Normal", current: current)
-                weightButton("bold", label: "Negrito", current: current)
-            }
-        }
-    }
-
-    private func alignSection(current: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Alinhamento")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                alignButton("left", icon: "text.alignleft", current: current)
-                alignButton("center", icon: "text.aligncenter", current: current)
-                alignButton("right", icon: "text.alignright", current: current)
-            }
-        }
+    private var barDivider: some View {
+        Divider()
+            .frame(height: 34)
+            .padding(.horizontal, 2)
     }
 
     private func colorDot(_ hex: String, selected: Bool, action: @escaping () -> Void) -> some View {
@@ -243,8 +226,7 @@ struct ContentView: View {
         } label: {
             Text(label)
                 .font(.system(size: 11, weight: weight == "bold" ? .bold : .regular))
-                .frame(maxWidth: .infinity)
-                .frame(height: 28)
+                .frame(width: 40, height: 28)
                 .background(chipBackground(current == weight))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
@@ -257,8 +239,7 @@ struct ContentView: View {
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .medium))
-                .frame(maxWidth: .infinity)
-                .frame(height: 28)
+                .frame(width: 32, height: 28)
                 .background(chipBackground(current == align))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
