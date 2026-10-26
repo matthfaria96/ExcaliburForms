@@ -35,6 +35,10 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
     @Published private(set) var textSelection: TextSelection?
     @Published private(set) var stickySelection: StickySelection?
+    @Published private(set) var shapeSelection: ShapeSelection?
+    /// Tipos de elemento na seleção (para ações como "Recortar" de imagem).
+    @Published private(set) var selectionTypes: Set<String> = []
+    @Published private(set) var selectionLocked = false
     @Published private(set) var layers: [LayerItem] = []
     @Published var lastError: String?
 
@@ -157,6 +161,23 @@ final class EditorController: NSObject, ObservableObject {
             stickySelection = nil
         }
 
+        if let shape = body["shape"] as? [String: Any],
+           let strokeColor = shape["strokeColor"] as? String,
+           let backgroundColor = shape["backgroundColor"] as? String {
+            shapeSelection = ShapeSelection(
+                strokeColor: strokeColor,
+                backgroundColor: backgroundColor,
+                strokeWidth: shape["strokeWidth"] as? String,
+                fillStyle: shape["fillStyle"] as? String ?? "solid",
+                strokeStyle: shape["strokeStyle"] as? String ?? "solid",
+                fillable: shape["fillable"] as? Bool ?? false
+            )
+        } else {
+            shapeSelection = nil
+        }
+        selectionTypes = Set(body["selectionTypes"] as? [String] ?? [])
+        selectionLocked = body["locked"] as? Bool ?? false
+
         layers = (body["layers"] as? [[String: Any]] ?? []).compactMap { dict in
             guard let id = dict["id"] as? String,
                   let label = dict["label"] as? String,
@@ -251,12 +272,14 @@ final class EditorController: NSObject, ObservableObject {
     func exportImage(
         format: ExportFormat,
         scope: ExportScope,
-        scale: Double = 2
+        scale: Double = ExportSettings.scale,
+        background: Bool = ExportSettings.includesBackground
     ) async throws -> ExportedImage {
         let request: [String: Any] = [
             "format": format.rawValue,
             "scope": scope.rawValue,
             "scale": scale,
+            "background": background,
         ]
         let result = try await webView.callAsyncJavaScript(
             "return window.excalibur.exportImage(request)",

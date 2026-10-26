@@ -107,12 +107,17 @@ const Root = () => {
       },
       setTheme: (next) => setTheme(next === "dark" ? "dark" : "light"),
       setHighlight: (color) => {
-        requireApi().updateScene({
-          appState: {
-            currentItemTextHighlight: color !== null,
-            ...(color !== null ? { currentItemHighlightColor: color } : {}),
-          },
-        });
+        const api = requireApi();
+        if (color === null) {
+          api.updateScene({ appState: { currentItemTextHighlight: false } });
+        } else {
+          api.updateScene({
+            appState: {
+              currentItemTextHighlight: true,
+              currentItemHighlightColor: color,
+            },
+          });
+        }
       },
       setStrokeColor: (color) => {
         requireApi().updateScene({ appState: { currentItemStrokeColor: color } });

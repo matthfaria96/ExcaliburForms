@@ -42,6 +42,19 @@ export type NativeMessage =
         backgroundColor: string;
         fontSize: number;
       } | null;
+      /** style of the selected shapes/arrows/drawings or the shape tool */
+      shape: {
+        strokeColor: string;
+        backgroundColor: string;
+        strokeWidth: "thin" | "medium" | "bold" | null;
+        fillStyle: string;
+        strokeStyle: string;
+        fillable: boolean;
+      } | null;
+      /** element types in the selection */
+      selectionTypes: string[];
+      /** whether a selected element is locked */
+      locked: boolean;
     }
   | { type: "error"; message: string };
 

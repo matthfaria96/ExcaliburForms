@@ -128,6 +128,11 @@
     .App-menu_bottom {
       flex-direction: row-reverse;
     }
+
+    // undo/redo live in the host's Edit menu (⌘Z / ⇧⌘Z)
+    .undo-redo-buttons {
+      display: none;
+    }
   }
 
   // on tablet, the pen mode button is rendered as a separate floating button

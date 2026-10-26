@@ -12,6 +12,8 @@ export type ExportRequest = {
   scope: ExportScope;
   /** pixel density of a PNG */
   scale?: number;
+  /** paint the canvas color behind the content (default) */
+  background?: boolean;
 };
 
 export type ExportResult = {
@@ -91,12 +93,14 @@ export const exportImage = async (
     },
   };
   const theme = appState.theme;
+  const background =
+    request.background === false ? { canvasBackgroundColor: false as const } : {};
 
   if (request.format === "svg") {
     const svg = await exportScene({
       type: "svg",
       ...common,
-      config: { ...viewport, theme },
+      config: { ...viewport, ...background, theme },
     });
     const text = new XMLSerializer().serializeToString(svg);
     return {
@@ -110,7 +114,7 @@ export const exportImage = async (
   const blob = await exportScene({
     type: "png",
     ...common,
-    config: { ...viewport, theme, scale },
+    config: { ...viewport, ...background, theme, scale },
   });
   return { base64: await blobToBase64(blob), mimeType: "image/png", scope };
 };

@@ -1,38 +1,5 @@
 import SwiftUI
 
-/// Painel flutuante da esquerda com abas de quadros e camadas.
-struct LeftPanel: View {
-    @State private var tab: Tab = .boards
-
-    enum Tab: String, CaseIterable, Identifiable {
-        case boards = "Quadros"
-        case layers = "Camadas"
-        var id: String { rawValue }
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Picker("", selection: $tab) {
-                ForEach(Tab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
-
-            switch tab {
-            case .boards:
-                BoardList()
-            case .layers:
-                LayerList()
-            }
-        }
-    }
-}
-
 /// Lista de camadas do quadro, da frente para o fundo: selecionar, reordenar e
 /// apagar.
 struct LayerList: View {

@@ -464,7 +464,8 @@ export const withSavedContext = (
 
 const drawElementOnCanvas = (
   element: NonDeletedExcalidrawElement,
-  elementsMap: RenderableElementsMap,
+  // only read (a label's container), so any non-deleted map will do
+  elementsMap: ElementsMap,
   rc: RoughCanvas,
   context: CanvasRenderingContext2D,
   renderConfig: StaticCanvasRenderConfig,

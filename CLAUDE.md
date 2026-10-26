@@ -27,7 +27,7 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
   - `Sources/ExcaliburForms` — app SwiftUI:
     - `Editor/EditorController` — WKWebView no esquema `excalibur://` (serve `Resources/web` por `WebAssetsSchemeHandler`), handler de mensagens `excalibur` (proxy fraco), `WKUIDelegate` (NSOpenPanel para imagem), links externos no navegador, **web data store não persistente** (página sempre fresca). Recebe `ready`/`save`/`state`/`error`; chama `window.excalibur.*` via `callAsyncJavaScript(arguments:)` (nunca interpola texto em JS).
     - `Boards/BoardLibrary` — estado observável sobre o `BoardStore` (fila de gravação própria).
-    - UI: `ContentView` (ZStack sobre o canvas), `LeftPanel` (painel flutuante translúcido com abas **Quadros/Camadas**, fecha ao clicar fora), `BoardList`, `LayerList`, barra inferior de propriedades e toolbar nativa com as ferramentas.
+    - UI: `ContentView` (ZStack sobre o canvas + barra da janela), `WorkspaceUI` (painel/aba/renomear/excluir, compartilhado com os menus), `Boards/BoardsPanel` (painel de vidro Quadros/Camadas, fecha ao clicar fora), `Boards/LayerList`, `Inspector/InspectorBar` (inspetor adaptável), `Settings/` (Ajustes, Sobre, Licenças).
     - `ExportService` — PNG/SVG × quadro/seleção/área visível, copiar PNG (⌘⇧C).
     - `AppDelegate` — `applicationWillTerminate` faz `flush()` da página + `library.flushSaves()`.
   - Persistência: `~/Library/Application Support/ExcaliburForms/boards.json` (índice) e `Boards/<id>/scene.excalidraw` + `Boards/<id>/files/<fileId>.json` (cada imagem gravada uma vez). Escritas atômicas; excluir manda a pasta para o Lixo.
@@ -69,9 +69,11 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 21. `e136e72` — Web data store não persistente (sem cache entre builds).
 22. `070445f` — Remoção das cores do menu inferior (só Tamanho/Peso/Alinhamento, segmentados com chip ativo em accent).
 
+23. Redesenho da UI (macOS 27): título da janela = nome do quadro; barra com só painel, uma cápsula de ferramentas (formas lembram a última usada) e Compartilhar; aparência saiu da barra para **Ajustes (⌘,)** no padrão do MacDash (Geral + Sobre + Licenças); painel de quadros/camadas de vidro com "+" no topo (sem botões duplicados); **inspetor no rodapé** adaptável (uma linha, duas linhas ou rolagem conforme a largura) com estilo de texto/nota/forma e ações da seleção; menus como nos apps da Apple (Arquivo › Exportar, Visualizar, Organizar, Ajuda › Atalhos); desfazer/refazer saiu do rodapé do editor; formas/setas/desenho ganharam cor, preenchimento, espessura e estilo do traço; exportação com resolução e fundo configuráveis; app em pt-BR (`CFBundleDevelopmentRegion`); ícone novo no estilo Freeform (`scripts/make-icon.py`, precisa de numpy + Pillow num venv).
+
 ## Estado atual / pendências
 
 - **Verificar no app real** os 8 critérios de conclusão (colar screenshot do clipboard, arrastar/soltar no WKWebView, recorte, camadas, fechar/reabrir, exportação, exclusão de quadros) — interativo, não automatizável aqui.
-- Cores no painel inferior foram removidas a pedido; o acesso a cor de texto/grifo ficou nos dois swatches agrupados ao "Aa" na toolbar (avaliar se devem sumir também e tudo virar padrão).
+- As cores de texto/grifo saíram da barra da janela e voltaram ao inspetor como **um botão de cor cada** (abre uma grade); confirmar com o usuário, que antes pediu para tirar as cores da barra inferior.
 - Rodar `scripts/build-app.sh --install` + reiniciar o app após cada mudança.
 - Não publicar release/site sem pedido explícito do usuário.

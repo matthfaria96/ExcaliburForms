@@ -61,12 +61,16 @@ rm -rf "$APP"
 mkdir -p "$MACOS_DIR" "$RESOURCES"
 cp "$BIN" "$MACOS_DIR/$APP_NAME"
 cp -R "$WEB_ROOT" "$RESOURCES/web"
+# a pasta de idioma faz o macOS usar o português nos menus e janelas do sistema
+mkdir -p "$RESOURCES/pt-BR.lproj"
 
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key><string>pt-BR</string>
+    <key>CFBundleLocalizations</key><array><string>pt-BR</string></array>
     <key>CFBundleName</key><string>$APP_NAME</string>
     <key>CFBundleDisplayName</key><string>$APP_NAME</string>
     <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>

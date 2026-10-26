@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { Excalidraw, getStrokeWidthByKey } from "@excalidraw/excalidraw";
+import { STROKE_WIDTH_KEYS } from "@excalidraw/common";
 
 import type {
   AppState,
@@ -52,6 +53,8 @@ const selectedText = (
   fontWeight: "normal" | "bold";
   textAlign: "left" | "center" | "right";
   highlighted: boolean;
+  backgroundColor: string;
+  strokeColor: string;
 } | null => {
   const selected = elements.find(
     (element) =>
@@ -65,7 +68,7 @@ const selectedText = (
   return {
     fontSize: selected.fontSize,
     fontWeight: selected.fontWeight ?? "normal",
-    textAlign: selected.textAlign,
+    textAlign: selected.textAlign as "left" | "center" | "right",
     highlighted: selected.highlighted === true,
     backgroundColor: selected.backgroundColor,
     strokeColor: selected.strokeColor,
@@ -128,6 +131,54 @@ const selectedSticky = (
   };
 };
 
+const SHAPE_TYPES = new Set([
+  "rectangle",
+  "ellipse",
+  "diamond",
+  "arrow",
+  "line",
+  "freedraw",
+]);
+const FILLABLE_TYPES = new Set(["rectangle", "ellipse", "diamond", "line"]);
+
+/** the stroke-width key whose width this element uses */
+const strokeWidthKey = (element: ExcalidrawElement) =>
+  STROKE_WIDTH_KEYS.find(
+    (key) => getStrokeWidthByKey(element.type, key) === element.strokeWidth,
+  ) ?? null;
+
+/**
+ * Style of the selected shapes, arrows and drawings (or, with none selected,
+ * of the active shape tool's defaults) for the native inspector.
+ */
+const selectedShape = (
+  appState: AppState,
+  elements: readonly ExcalidrawElement[],
+) => {
+  const selected = elements.filter(
+    (element) =>
+      appState.selectedElementIds[element.id] &&
+      !element.isDeleted &&
+      SHAPE_TYPES.has(element.type),
+  );
+  const toolType = appState.activeTool.type;
+  if (!selected.length && !SHAPE_TYPES.has(toolType)) {
+    return null;
+  }
+  const first = selected[0];
+  return {
+    strokeColor: first?.strokeColor ?? appState.currentItemStrokeColor,
+    backgroundColor:
+      first?.backgroundColor ?? appState.currentItemBackgroundColor,
+    strokeWidth: first ? strokeWidthKey(first) : appState.currentItemStrokeWidthKey,
+    fillStyle: first?.fillStyle ?? appState.currentItemFillStyle,
+    strokeStyle: first?.strokeStyle ?? appState.currentItemStrokeStyle,
+    fillable: first
+      ? selected.some((element) => FILLABLE_TYPES.has(element.type))
+      : FILLABLE_TYPES.has(toolType),
+  };
+};
+
 /** state the native toolbar mirrors; posted only when it changes */
 const toNativeState = (
   appState: AppState,
@@ -142,6 +193,23 @@ const toNativeState = (
     : null,
   text: selectedText(appState, elements),
   sticky: selectedSticky(appState, elements),
+  shape: selectedShape(appState, elements),
+  selectionTypes: [
+    ...new Set(
+      elements
+        .filter(
+          (element) =>
+            appState.selectedElementIds[element.id] && !element.isDeleted,
+        )
+        .map((element) => element.type),
+    ),
+  ],
+  locked: elements.some(
+    (element) =>
+      appState.selectedElementIds[element.id] &&
+      !element.isDeleted &&
+      element.locked,
+  ),
   layers: elements
     .filter((element) => !element.isDeleted)
     .map((element) => ({

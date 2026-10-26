@@ -67,7 +67,7 @@ enum Tool: String, CaseIterable, Identifiable, Sendable {
         case .arrow: return "A"
         case .line: return "L"
         case .freedraw: return "P"
-        case .eraser: return nil
+        case .eraser: return "E"
         }
     }
 }
@@ -96,6 +96,7 @@ enum Command: String, CaseIterable, Identifiable, Sendable {
     case selectAll
     case toggleGrid
     case toggleSnap
+    case shortcuts
 
     var id: String { rawValue }
 
@@ -122,6 +123,7 @@ enum Command: String, CaseIterable, Identifiable, Sendable {
         case .selectAll: return "Selecionar tudo"
         case .toggleGrid: return "Mostrar grade"
         case .toggleSnap: return "Ajustar a objetos"
+        case .shortcuts: return "Atalhos de teclado"
         }
     }
 }
@@ -285,4 +287,56 @@ extension Color {
             blue: Double(value & 0xff) / 255
         )
     }
+}
+
+/// Estilo das formas, setas e desenhos selecionados (ou da ferramenta ativa).
+struct ShapeSelection: Equatable {
+    var strokeColor: String
+    var backgroundColor: String
+    var strokeWidth: String?
+    var fillStyle: String
+    var strokeStyle: String
+    var fillable: Bool
+}
+
+/// Espessura do traço (chaves do editor).
+enum StrokeWidth: String, CaseIterable, Identifiable {
+    case thin, medium, bold
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .thin: return "Fino"
+        case .medium: return "Médio"
+        case .bold: return "Grosso"
+        }
+    }
+
+    /// Altura da linha desenhada no botão.
+    var lineHeight: CGFloat {
+        switch self {
+        case .thin: return 1.5
+        case .medium: return 3
+        case .bold: return 5
+        }
+    }
+}
+
+/// Cores do traço e do preenchimento de formas (a mesma família vibrante).
+struct ShapeColor: Identifiable, Equatable {
+    let hex: String
+    let name: String
+    var id: String { hex }
+
+    static let stroke: [ShapeColor] = TextColor.options.map { ShapeColor(hex: $0.hex, name: $0.name) }
+
+    static let fill: [ShapeColor] = [
+        ShapeColor(hex: "transparent", name: "Sem preenchimento"),
+        ShapeColor(hex: "#ffd93d", name: "Amarelo"),
+        ShapeColor(hex: "#ff6fa5", name: "Rosa"),
+        ShapeColor(hex: "#5ce65c", name: "Verde"),
+        ShapeColor(hex: "#4cc3ff", name: "Azul"),
+        ShapeColor(hex: "#ffa14a", name: "Laranja"),
+        ShapeColor(hex: "#b45cff", name: "Roxo"),
+    ]
 }

@@ -133,11 +133,13 @@ describe("autosave", () => {
 describe("tools", () => {
   it("reports the text tool as a single tool regardless of the marker", () => {
     const base = getDefaultAppState();
-    const text = { type: "text" as const, customType: null };
+    const text = { ...base.activeTool, type: "text" as const, customType: null };
     expect(getActiveToolId({ activeTool: text })).toBe("text");
     expect(getActiveToolId({ activeTool: base.activeTool })).toBe("selection");
     expect(
-      getActiveToolId({ activeTool: { type: "laser", customType: null } }),
+      getActiveToolId({
+        activeTool: { ...base.activeTool, type: "laser", customType: null },
+      }),
     ).toBe(null);
   });
 

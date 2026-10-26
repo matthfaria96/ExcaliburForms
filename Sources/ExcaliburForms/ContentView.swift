@@ -1,472 +1,143 @@
 import AppKit
 import SwiftUI
 
-/// Janela principal: lista de quadros + editor, barra de ferramentas com as
-/// ferramentas e menus de exportação/apariência.
+/// Janela principal: o canvas ocupa tudo; sobre ele flutuam o painel de
+/// quadros (esquerda) e o inspetor do que está selecionado (rodapé). A barra
+/// da janela tem só o painel, as ferramentas e o compartilhar.
 struct ContentView: View {
     @EnvironmentObject private var library: BoardLibrary
     @EnvironmentObject private var editor: EditorController
+    @EnvironmentObject private var ui: WorkspaceUI
 
     @AppStorage("appearance") private var appearance: Appearance = .system
-    @State private var shapesHovering = false
-    @State private var boardsVisible = true
+
+    /// Largura reservada à direita do rodapé para o zoom do editor.
+    private let footerReserve: CGFloat = 150
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             EditorView(webView: editor.webView)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // clicar fora fecha a lista de quadros
-            if boardsVisible {
+            if ui.panelVisible {
+                // clicar no canvas fecha o painel (pedido do usuário)
                 Color.clear
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.smooth(duration: 0.28)) { boardsVisible = false }
-                    }
-                    .zIndex(1)
-            }
+                    .onTapGesture { ui.togglePanel() }
 
-            if boardsVisible {
-                LeftPanel()
-                    .frame(width: 250)
+                BoardsPanel()
+                    .frame(width: 260)
                     .frame(maxHeight: .infinity)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.primary.opacity(0.08))
-                    )
-                    .shadow(color: .black.opacity(0.16), radius: 16, y: 6)
-                    .padding(.leading, 12)
-                    .padding(.top, 52)
-                    .padding(.bottom, 12)
+                    .floatingPanel()
+                    .padding(10)
                     .transition(.move(edge: .leading).combined(with: .opacity))
-                    .zIndex(2)
             }
 
-            // barra de propriedades no rodapé, centralizada
-            propertiesBar
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 16)
-                .opacity(showsProperties ? 1 : 0)
-                .offset(y: showsProperties ? 0 : 18)
-                .allowsHitTesting(showsProperties)
-                .animation(.smooth(duration: 0.22), value: showsProperties)
-                .zIndex(3)
-
-            floatingBoardButton
-                .padding(.leading, 12)
-                .padding(.top, 12)
-                .zIndex(4)
+            GeometryReader { proxy in
+                let insets = inspectorInsets(width: proxy.size.width)
+                InspectorBar()
+                    .padding(.leading, insets.leading)
+                    .padding(.trailing, insets.trailing)
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottom)
+            }
+            .padding(.bottom, 14)
+                .opacity(showsInspector ? 1 : 0)
+                .offset(y: showsInspector ? 0 : 14)
+                .allowsHitTesting(showsInspector)
+                .animation(.smooth(duration: 0.22), value: showsInspector)
         }
-        .frame(minWidth: 900, minHeight: 560)
+        .frame(minWidth: 760, minHeight: 520)
+        .navigationTitle(library.selectedBoard?.name ?? "ExcaliburForms")
         .toolbar { toolbarContent }
-        .alert(
-            "ExcaliburForms",
-            isPresented: errorPresented
-        ) {
-            Button("OK", role: .cancel) { editor.lastError = nil }
+        .confirmationDialog(
+            "Excluir quadro?",
+            isPresented: deleteConfirmation,
+            presenting: ui.boardToDelete
+        ) { board in
+            Button("Excluir \"\(board.name)\"", role: .destructive) {
+                BoardActions.delete(board, library: library, editor: editor)
+                ui.boardToDelete = nil
+            }
+            Button("Cancelar", role: .cancel) { ui.boardToDelete = nil }
+        } message: { board in
+            Text("\"\(board.name)\" vai para o Lixo. Os outros quadros não mudam.")
+        }
+        .alert("Algo deu errado", isPresented: errorPresented) {
+            Button("OK", role: .cancel) {
+                editor.lastError = nil
+                library.errorMessage = nil
+            }
         } message: {
-            Text(editor.lastError ?? "")
+            Text(editor.lastError ?? library.errorMessage ?? "")
         }
         .preferredColorScheme(colorScheme)
         .onAppear { applyAppearance() }
         .onChange(of: appearance) { _, _ in applyAppearance() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            applyAppearance()
+        }
     }
 
-    private var showsProperties: Bool {
-        editor.textSelection != nil
-            || editor.stickySelection != nil
+    /// Margens do inspetor: fica entre o painel de quadros e o zoom; numa
+    /// janela estreita, centraliza sobre o canvas (por cima do painel).
+    private func inspectorInsets(width: CGFloat) -> (leading: CGFloat, trailing: CGFloat) {
+        let panel: CGFloat = ui.panelVisible ? 280 : footerReserve
+        if width - panel - footerReserve >= 420 {
+            return (panel, footerReserve)
+        }
+        return (footerReserve, footerReserve)
+    }
+
+    private var showsInspector: Bool {
+        editor.hasSelection
             || editor.activeTool == .text
             || editor.activeTool == .stickynote
+            || editor.shapeSelection != nil
     }
 
-    /// Barra de propriedades no rodapé, com as opções lado a lado.
-    private var propertiesBar: some View {
-        HStack(spacing: 16) {
-            if let sticky = editor.stickySelection {
-                barGroup("Tamanho") {
-                    chipGroup {
-                        ForEach(TextSelection.sizes, id: \.self) { size in
-                            sizeButton(size, current: sticky.fontSize)
-                        }
-                    }
-                }
-            } else {
-                barGroup("Tamanho") {
-                    chipGroup {
-                        ForEach(TextSelection.sizes, id: \.self) { size in
-                            sizeButton(size, current: editor.textSelection?.fontSize)
-                        }
-                    }
-                }
-                if let text = editor.textSelection {
-                    barDivider
-                    barGroup("Peso") {
-                        chipGroup {
-                            weightButton("normal", label: "Aa", current: text.fontWeight)
-                            weightButton("bold", label: "Aa", current: text.fontWeight)
-                        }
-                    }
-                    barDivider
-                    barGroup("Alinhamento") {
-                        chipGroup {
-                            alignButton("left", icon: "text.alignleft", current: text.textAlign)
-                            alignButton("center", icon: "text.aligncenter", current: text.textAlign)
-                            alignButton("right", icon: "text.alignright", current: text.textAlign)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 9)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08))
-        )
-        .shadow(color: .black.opacity(0.2), radius: 20, y: 8)
-    }
-
-    private func barGroup<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-            content()
-        }
-    }
-
-    private func chipGroup<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        HStack(spacing: 2) {
-            content()
-        }
-        .padding(3)
-        .background(
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
-        )
-    }
-
-    private var barDivider: some View {
-        Divider()
-            .frame(height: 34)
-            .padding(.horizontal, 2)
-    }
-
-    private func sizeButton(_ size: Double, current: Double?) -> some View {
-        let selected = current == size
-        return Button {
-            editor.performAction("changeFontSize", value: size)
-        } label: {
-            Text(TextSelection.sizeLabels[size] ?? "?")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(selected ? Color.white : Color.primary)
-                .frame(width: 34, height: 26)
-                .background(chipBackground(selected))
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func weightButton(_ weight: String, label: String, current: String) -> some View {
-        let selected = current == weight
-        return Button {
-            editor.performAction("changeFontWeight", value: weight)
-        } label: {
-            Text(label)
-                .font(.system(size: 12, weight: weight == "bold" ? .bold : .regular))
-                .foregroundStyle(selected ? Color.white : Color.primary)
-                .frame(width: 40, height: 26)
-                .background(chipBackground(selected))
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func alignButton(_ align: String, icon: String, current: String) -> some View {
-        let selected = current == align
-        return Button {
-            editor.performAction("changeTextAlign", value: align)
-        } label: {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(selected ? Color.white : Color.primary)
-                .frame(width: 34, height: 26)
-                .background(chipBackground(selected))
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func chipBackground(_ selected: Bool) -> Color {
-        selected ? Color.accentColor : Color.clear
-    }
-
-    /// Botão flutuante no canto superior esquerdo que abre/fecha a lista de
-    /// quadros (que flutua sobre o canvas, sem empurrar o conteúdo).
-    private var floatingBoardButton: some View {
-        Button {
-            withAnimation(.smooth(duration: 0.28)) {
-                boardsVisible.toggle()
-            }
-        } label: {
-            Image(systemName: "sidebar.left")
-                .font(.system(size: 13, weight: .semibold))
-                .frame(width: 32, height: 32)
-        }
-        .buttonStyle(.plain)
-        .background(.ultraThinMaterial, in: Circle())
-        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1)))
-        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
-        .help(boardsVisible ? "Ocultar quadros" : "Mostrar quadros")
-    }
-
-    // MARK: - Barra de ferramentas
+    // MARK: - Barra da janela
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .principal) {
-            toolsBar
+        ToolbarItem(placement: .navigation) {
+            Button {
+                ui.togglePanel()
+            } label: {
+                Label("Quadros", systemImage: "sidebar.left")
+            }
+            .help(ui.panelVisible ? "Ocultar quadros (⌃⌘S)" : "Mostrar quadros (⌃⌘S)")
         }
-        ToolbarItemGroup(placement: .primaryAction) {
-            exportMenu
-            appearanceMenu
+        ToolbarItem(placement: .principal) {
+            ToolPalette()
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Menu {
+                Button("Copiar como imagem") { ExportService.copyPNG(editor) }
+                Divider()
+                exportItems(.png)
+                exportItems(.svg)
+            } label: {
+                Label("Compartilhar", systemImage: "square.and.arrow.up")
+            }
+            .help("Copiar ou exportar")
         }
     }
 
-    private var toolsBar: some View {
-        HStack(spacing: 4) {
-            ToolButton(tool: .selection, isActive: editor.activeTool == .selection) {
-                editor.setTool(.selection)
-            }
-            ToolButton(tool: .hand, isActive: editor.activeTool == .hand) {
-                editor.setTool(.hand)
-            }
-            separator
-            ToolButton(tool: .image, isActive: editor.activeTool == .image) {
-                editor.setTool(.image)
-            }
-            HStack(spacing: 1) {
-                ToolButton(tool: .text, isActive: editor.activeTool == .text) {
-                    editor.setTool(.text)
+    @ViewBuilder
+    private func exportItems(_ format: ExportFormat) -> some View {
+        Menu("Exportar \(format.label)") {
+            ForEach([ExportScope.board, .selection, .viewport]) { scope in
+                Button(scope.label) {
+                    ExportService.export(
+                        editor,
+                        format: format,
+                        scope: scope,
+                        suggestedName: library.selectedBoard?.name ?? "Quadro"
+                    )
                 }
-                textColorSwatch
-                highlightSwatch
-            }
-            .padding(.horizontal, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
-            )
-            ToolButton(tool: .stickynote, isActive: editor.activeTool == .stickynote) {
-                editor.setTool(.stickynote)
-            }
-            separator
-            shapesMenu
-            ToolButton(tool: .arrow, isActive: editor.activeTool == .arrow) {
-                editor.setTool(.arrow)
-            }
-            ToolButton(tool: .freedraw, isActive: editor.activeTool == .freedraw) {
-                editor.setTool(.freedraw)
+                .disabled(scope == .selection && !editor.hasSelection)
             }
         }
-    }
-
-    private var separator: some View {
-        Divider()
-            .frame(height: 16)
-            .padding(.horizontal, 3)
-    }
-
-    private var shapesActive: Bool {
-        [Tool.rectangle, .ellipse, .diamond, .line].contains(editor.activeTool ?? .selection)
-    }
-
-    private var shapesMenu: some View {
-        Menu {
-            ForEach([Tool.rectangle, .ellipse, .diamond, .line]) { tool in
-                Button {
-                    editor.setTool(tool)
-                } label: {
-                    Label(tool.label, systemImage: tool.systemImage)
-                }
-            }
-        } label: {
-            Image(systemName: "square.on.circle")
-                .font(.system(size: 13, weight: .medium))
-                .frame(width: 30, height: 26)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(shapesBackground)
-                )
-                .foregroundStyle(shapesActive ? Color.accentColor : .secondary)
-                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .onHover { shapesHovering = $0 }
-        .fixedSize()
-        .help("Formas")
-    }
-
-    private var shapesBackground: Color {
-        if shapesActive {
-            return Color.accentColor.opacity(0.2)
-        }
-        if shapesHovering {
-            return Color.primary.opacity(0.07)
-        }
-        return .clear
-    }
-
-    /// Cor padrão do texto (o traço): um ponto ao lado do ícone que abre o
-    /// seletor de cores.
-    private var textColorSwatch: some View {
-        Menu {
-            ForEach(TextColor.options) { option in
-                Button {
-                    editor.setStrokeColor(option.hex)
-                } label: {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hexString: option.hex))
-                            .frame(width: 12, height: 12)
-                        Text(option.name)
-                        if editor.strokeColor == option.hex {
-                            Spacer()
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            swatchButton(
-                "textformat",
-                color: editor.strokeColor.map { Color(hexString: $0) }
-            )
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Cor do texto")
-    }
-
-    /// Cor padrão do grifo da ferramenta texto: um ponto ao lado do ícone que
-    /// abre o seletor (desligado, amarelo, ciano, verde, rosa, violeta).
-    private var highlightSwatch: some View {
-        Menu {
-            ForEach(HighlightColor.options) { option in
-                Button {
-                    editor.setHighlight(option.hex)
-                } label: {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hexString: option.hex))
-                            .frame(width: 12, height: 12)
-                        Text(option.name)
-                        if editor.highlightColor == option.hex {
-                            Spacer()
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            swatchButton(
-                "highlighter",
-                color: editor.highlightColor.map { Color(hexString: $0) },
-                disabled: editor.highlightColor == nil
-            )
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Cor do grifo")
-    }
-
-    /// Botão de cor da barra nativa: ícone + faixa com a cor atual.
-    private func swatchButton(
-        _ icon: String,
-        color: Color?,
-        disabled: Bool = false
-    ) -> some View {
-        VStack(spacing: 2) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
-                .frame(height: 15)
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(disabled ? Color.clear : (color ?? Color.clear))
-                .frame(width: 20, height: 4)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .strokeBorder(
-                            disabled ? Color.secondary.opacity(0.6) : Color.primary.opacity(0.12),
-                            lineWidth: 1
-                        )
-                )
-        }
-        .frame(width: 30, height: 26)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.primary.opacity(0.04))
-        )
-        .contentShape(Rectangle())
-    }
-
-    private var exportMenu: some View {
-        Menu {
-            Button("Copiar imagem (PNG)") {
-                ExportService.copyPNG(editor)
-            }
-            .keyboardShortcut("c", modifiers: [.command, .shift])
-            Divider()
-            ForEach(ExportFormat.allCases) { format in
-                Menu(format.label) {
-                    ForEach([ExportScope.board, .selection, .viewport]) { scope in
-                        Button(scope.label) {
-                            ExportService.export(editor, format: format, scope: scope)
-                        }
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Exportar")
-    }
-
-    private var appearanceMenu: some View {
-        Menu {
-            ForEach(Appearance.allCases) { mode in
-                Button {
-                    appearance = mode
-                } label: {
-                    if appearance == mode {
-                        Label(mode.label, systemImage: "checkmark")
-                    } else {
-                        Text(mode.label)
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: appearanceSymbol)
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Aparência")
     }
 
     // MARK: - Aparência
@@ -493,63 +164,131 @@ struct ContentView: View {
         }
     }
 
-    private var appearanceSymbol: String {
-        switch appearance {
-        case .system: return "circle.lefthalf.filled"
-        case .light: return "sun.max"
-        case .dark: return "moon"
-        }
-    }
-
     private var errorPresented: Binding<Bool> {
         Binding(
-            get: { editor.lastError != nil },
-            set: { if !$0 { editor.lastError = nil } }
+            get: { editor.lastError != nil || library.errorMessage != nil },
+            set: {
+                if !$0 {
+                    editor.lastError = nil
+                    library.errorMessage = nil
+                }
+            }
+        )
+    }
+
+    private var deleteConfirmation: Binding<Bool> {
+        Binding(
+            get: { ui.boardToDelete != nil },
+            set: { if !$0 { ui.boardToDelete = nil } }
         )
     }
 }
 
-// MARK: - Botão de ferramenta
+// MARK: - Ferramentas
 
-/// Botão de ferramenta da barra nativa: discreto, com hover e estado ativo.
-private struct ToolButton: View {
-    let tool: Tool
-    let isActive: Bool
-    let action: () -> Void
+/// As ferramentas, numa só cápsula na barra da janela. Formas viram um menu
+/// que lembra a última forma usada (como no Freeform).
+private struct ToolPalette: View {
+    @EnvironmentObject private var editor: EditorController
+    @AppStorage("lastShapeTool") private var lastShape: Tool = .rectangle
 
-    @State private var hovering = false
+    private static let shapes: [Tool] = [.rectangle, .ellipse, .diamond, .line]
 
     var body: some View {
-        Button(action: action) {
+        HStack(spacing: 2) {
+            tool(.selection)
+            tool(.hand)
+            gap
+            tool(.text)
+            tool(.stickynote)
+            tool(.image)
+            gap
+            shapeTool
+            tool(.arrow)
+            tool(.freedraw)
+            tool(.eraser)
+        }
+        .padding(.horizontal, 4)
+        .onChange(of: editor.activeTool) { _, tool in
+            if let tool, Self.shapes.contains(tool) { lastShape = tool }
+        }
+    }
+
+    private var gap: some View {
+        Divider().frame(height: 16).padding(.horizontal, 4)
+    }
+
+    private func tool(_ tool: Tool) -> some View {
+        Button {
+            editor.setTool(tool)
+        } label: {
             Image(systemName: tool.systemImage)
-                .font(.system(size: 13, weight: .medium))
-                .frame(width: 30, height: 26)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(background)
-                )
-                .foregroundStyle(isActive ? Color.accentColor : .secondary)
-                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .help(helpText)
+        .buttonStyle(ToolButtonStyle(isActive: editor.activeTool == tool))
+        .help(tool.helpText)
     }
 
-    private var background: Color {
-        if isActive {
-            return Color.accentColor.opacity(0.2)
+    /// Clique usa a última forma; a setinha abre as outras.
+    private var shapeTool: some View {
+        let active = editor.activeTool.map(Self.shapes.contains) ?? false
+        return HStack(spacing: 0) {
+            Button {
+                editor.setTool(lastShape)
+            } label: {
+                Image(systemName: lastShape.systemImage)
+            }
+            .buttonStyle(ToolButtonStyle(isActive: active))
+            .help(lastShape.helpText)
+
+            Menu {
+                ForEach(Self.shapes) { shape in
+                    Button {
+                        editor.setTool(shape)
+                    } label: {
+                        Label(shape.label, systemImage: shape.systemImage)
+                    }
+                }
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .frame(width: 14, height: 28)
+            .help("Outras formas")
         }
-        if hovering {
-            return Color.primary.opacity(0.07)
-        }
-        return .clear
+    }
+}
+
+/// Botão de ferramenta: ícone com destaque em accent quando ativo.
+private struct ToolButtonStyle: ButtonStyle {
+    let isActive: Bool
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 14, weight: .medium))
+            .frame(width: 32, height: 28)
+            .foregroundStyle(isActive ? Color.white : Color.primary.opacity(0.85))
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(fill(pressed: configuration.isPressed))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.12), value: isActive)
     }
 
-    private var helpText: String {
-        if let shortcut = tool.shortcut {
-            return "\(tool.label)  (\(shortcut))"
-        }
-        return tool.label
+    private func fill(pressed: Bool) -> Color {
+        if isActive { return .accentColor }
+        if pressed { return Color.primary.opacity(0.14) }
+        return hovering ? Color.primary.opacity(0.07) : .clear
+    }
+}
+
+private extension Tool {
+    var helpText: String {
+        shortcut.map { "\(label) (\($0))" } ?? label
     }
 }
