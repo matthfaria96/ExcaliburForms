@@ -74,6 +74,9 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 24. Correções: cor do texto não mudava (a legibilidade sobre o grifo exigia contraste 4,5 e escurecia quase toda cor; agora só ajusta abaixo de 2,0, quando texto e grifo quase se confundem); inspetor mostrava "sem marca-texto" em texto grifado por padrão; data no canto da nota segue a cor da nota (`getStickyNoteFooterColor`); fonte (À mão/Normal/Destaque/Código) para texto e notas; **pontos no fundo** como no Freeform (`UIOptions.dotGrid`, espaçamento adaptativo ao zoom, nunca exportado; liga/desliga em Ajustes).
 - Testes JS rodando em paralelo podem falhar por falta de recursos da máquina (timeouts, "number of renders"); repetir os arquivos com `--no-file-parallelism` antes de concluir que é regressão.
 
+25. Ícone: camadas do Icon Composer em `Assets/AppIcon.icon` (círculo, cartão de vidro, traço), geradas por `ICON_LAYERS_DIR=Assets/AppIcon.icon/Assets <venv>/bin/python scripts/make-icon.py <iconset> Resources/AppIcon.png`; o build compila com `actool` (Assets.car + .icns). Sem isso o macOS 26+ põe o ícone numa moldura cinza. O nome do ícone leva um hash das camadas (cache do Dock/Launchpad); a instalação apaga o app antigo antes de copiar e tira `build/` do LaunchServices.
+- Se o Dock/Launchpad mostrar ícone velho: `rm -rf $(getconf DARWIN_USER_CACHE_DIR){com.apple.dock.iconcache,com.apple.iconservices,com.apple.iconservicesagent}; killall iconservicesagent Dock`.
+
 ## Estado atual / pendências
 
 - **Verificar no app real** os 8 critérios de conclusão (colar screenshot do clipboard, arrastar/soltar no WKWebView, recorte, camadas, fechar/reabrir, exportação, exclusão de quadros) — interativo, não automatizável aqui.

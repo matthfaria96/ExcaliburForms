@@ -82,11 +82,15 @@ ImageDraw.Draw(circle_mask).ellipse([px(212), px(408), px(612), px(808)], fill=2
 canvas = Image.alpha_composite(canvas, soft_shadow(circle_mask, 14, 22, 0.22, (120, 60, 0)))
 circle = gradient((255, 214, 64), (255, 112, 67), (412, 410), (412, 806))
 canvas = Image.alpha_composite(canvas, layer(circle, circle_mask))
+circle_layer = layer(circle, circle_mask)
 # brilho suave no alto do círculo
 gloss = Image.new("L", (W, W), 0)
 ImageDraw.Draw(gloss).ellipse([px(262), px(430), px(520), px(600)], fill=120)
 gloss = ImageChops.multiply(gloss.filter(ImageFilter.GaussianBlur(px(40))), circle_mask)
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), gloss))
+circle_layer = Image.alpha_composite(
+    circle_layer, layer(Image.new("RGBA", (W, W), (255, 255, 255, 255)), gloss)
+)
 
 # --- cartão de vidro azul, translúcido, por cima do círculo ------------------
 card_box = [px(420), px(222), px(812), px(614)]
@@ -98,6 +102,7 @@ behind = canvas.filter(ImageFilter.GaussianBlur(px(6)))
 canvas = Image.composite(behind, canvas, card_mask)
 card = gradient((92, 220, 255), (36, 140, 255), (440, 230), (800, 610))
 canvas = Image.alpha_composite(canvas, layer(card, card_mask, 0.66))
+card_layer = layer(card, card_mask)
 # reflexo no topo e aro claro
 sheen = Image.new("L", (W, W), 0)
 ImageDraw.Draw(sheen).ellipse([px(380), px(120), px(880), px(420)], fill=90)
@@ -141,10 +146,14 @@ pts = scribble()
 ink = stroke_mask(pts, px(30))
 canvas = Image.alpha_composite(canvas, soft_shadow(ink, 14, 14, 0.35))
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (28, 28, 36, 255)), ink))
+ink_layer = layer(Image.new("RGBA", (W, W), (28, 28, 36, 255)), ink)
 # luz: um traço mais fino e claro deslocado para cima, recortado pela tinta
 highlight = ImageChops.multiply(stroke_mask(pts, px(12), dx=-5, dy=-9), ink)
 highlight = highlight.filter(ImageFilter.GaussianBlur(px(5)))
 canvas = Image.alpha_composite(canvas, layer(Image.new("RGBA", (W, W), (150, 150, 170, 255)), highlight, 0.75))
+ink_layer = Image.alpha_composite(
+    ink_layer, layer(Image.new("RGBA", (W, W), (150, 150, 170, 255)), highlight, 0.75)
+)
 
 # borda fina de vidro no corpo
 inner_body = squircle_mask((body_box[0] + px(3), body_box[1] + px(3), body_box[2] - px(3), body_box[3] - px(3)))
@@ -174,6 +183,17 @@ sizes = {
 }
 for name, size in sizes.items():
     img.resize((size, size), Image.LANCZOS).save(os.path.join(ICONSET, name))
+
+# --- camadas para o Icon Composer (macOS 26+: vidro e sem moldura) ----------
+# O .icon desenha em 1024 = o próprio squircle, então cada camada é recortada
+# no corpo (100..924) e ampliada; fundo e sombras ficam por conta do sistema.
+LAYERS = os.environ.get("ICON_LAYERS_DIR")
+if LAYERS:
+    os.makedirs(LAYERS, exist_ok=True)
+    crop = (body_box[0], body_box[1], body_box[2], body_box[3])
+    for name, image in (("circle", circle_layer), ("card", card_layer), ("ink", ink_layer)):
+        image.crop(crop).resize((S, S), Image.LANCZOS).save(os.path.join(LAYERS, f"{name}.png"))
+    print(f"layers: {LAYERS}")
 
 print(f"master: {MASTER}")
 print(f"iconset: {ICONSET}")

@@ -64,6 +64,16 @@ cp -R "$WEB_ROOT" "$RESOURCES/web"
 # a pasta de idioma faz o macOS usar o português nos menus e janelas do sistema
 mkdir -p "$RESOURCES/pt-BR.lproj"
 
+# O nome do ícone leva um pedaço do hash do arquivo: o Dock e o Launchpad
+# guardam ícones em cache pelo nome, então um ícone novo precisa de nome novo.
+ICON_SOURCE="$ROOT/Assets/AppIcon.icon"
+ICON_NAME="AppIcon"
+if [[ -d "$ICON_SOURCE" ]]; then
+  ICON_NAME="AppIcon-$(cat "$ICON_SOURCE/icon.json" "$ICON_SOURCE"/Assets/*.png | shasum | cut -c1-8)"
+elif [[ -f "$ROOT/Resources/AppIcon.icns" ]]; then
+  ICON_NAME="AppIcon-$(shasum "$ROOT/Resources/AppIcon.icns" | cut -c1-8)"
+fi
+
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -78,7 +88,8 @@ cat > "$CONTENTS/Info.plist" <<PLIST
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleExecutable</key><string>$APP_NAME</string>
-    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>CFBundleIconFile</key><string>$ICON_NAME</string>
+    <key>CFBundleIconName</key><string>$ICON_NAME</string>
     <key>LSMinimumSystemVersion</key><string>$MIN_OS</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -89,8 +100,26 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 PLIST
 
 # Ícone, se existir.
-if [[ -f "$ROOT/Resources/AppIcon.icns" ]]; then
-  cp "$ROOT/Resources/AppIcon.icns" "$RESOURCES/AppIcon.icns"
+# macOS 26+: o ícone em camadas (Assets/AppIcon.icon, do Icon Composer) vira
+# Assets.car + .icns pelo actool do Xcode — com vidro e sem a moldura cinza
+# que o sistema põe em ícones antigos. Sem Xcode, fica o .icns pronto.
+ACTOOL_OK=0
+if [[ -d "$ICON_SOURCE" && -x "$DEVELOPER_DIR/usr/bin/actool" ]]; then
+  ICON_WORK="$ROOT/build/icon"
+  rm -rf "$ICON_WORK" && mkdir -p "$ICON_WORK"
+  cp -R "$ICON_SOURCE" "$ICON_WORK/$ICON_NAME.icon"
+  if DEVELOPER_DIR="$DEVELOPER_DIR" xcrun actool --compile "$RESOURCES" \
+      --platform macosx --minimum-deployment-target "$MIN_OS" --app-icon "$ICON_NAME" \
+      --output-partial-info-plist "$ICON_WORK/partial.plist" \
+      --errors --warnings "$ICON_WORK/$ICON_NAME.icon" >/dev/null; then
+    ACTOOL_OK=1
+    echo "==> Ícone em camadas (actool): $ICON_NAME"
+  else
+    echo "aviso: actool falhou; usando o .icns" >&2
+  fi
+fi
+if [[ "$ACTOOL_OK" == "0" && -f "$ROOT/Resources/AppIcon.icns" ]]; then
+  cp "$ROOT/Resources/AppIcon.icns" "$RESOURCES/$ICON_NAME.icns"
 fi
 
 # 4) Liquid Glass (macOS 26): o SwiftPM grava SDK = min OS (14.0) no Mach-O;
@@ -116,8 +145,20 @@ codesign --force --deep --sign - "$APP"
 # 6) Instalação.
 if [[ "$INSTALL" == "1" ]]; then
   echo "==> Instalando em /Applications"
-  ditto "$APP" "/Applications/$APP_NAME.app"
-  open "/Applications/$APP_NAME.app"
+  LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+  DEST="/Applications/$APP_NAME.app"
+  # fecha a versão aberta e troca o app inteiro (ditto por cima mesclaria
+  # arquivos antigos, como ícones de versões anteriores)
+  osascript -e "tell application \"$APP_NAME\" to quit" >/dev/null 2>&1 || true
+  sleep 1
+  pkill -x "$APP_NAME" 2>/dev/null || true
+  rm -rf "$DEST"
+  ditto "$APP" "$DEST"
+  # só a cópia de /Applications fica registrada (sem duplicatas no Launchpad)
+  "$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
+  "$LSREGISTER" -f "$DEST" >/dev/null 2>&1 || true
+  touch "$DEST"
+  open "$DEST"
 fi
 
 echo "OK: $APP"
