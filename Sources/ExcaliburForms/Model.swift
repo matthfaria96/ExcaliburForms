@@ -194,6 +194,28 @@ struct HighlightColor: Identifiable, Equatable {
     static let defaultHex = "#ffd43b"
 }
 
+/// Cor padrão do texto (a cor do traço que a ferramenta texto usa).
+struct TextColor: Identifiable, Equatable {
+    let hex: String
+    let name: String
+    var id: String { hex }
+
+    static let options: [TextColor] = [
+        TextColor(hex: "#1e1e1e", name: "Preto"),
+        TextColor(hex: "#868e96", name: "Cinza"),
+        TextColor(hex: "#fa5252", name: "Vermelho"),
+        TextColor(hex: "#fd7e14", name: "Laranja"),
+        TextColor(hex: "#fab005", name: "Amarelo"),
+        TextColor(hex: "#40c057", name: "Verde"),
+        TextColor(hex: "#15aabf", name: "Ciano"),
+        TextColor(hex: "#228be6", name: "Azul"),
+        TextColor(hex: "#7950f2", name: "Violeta"),
+        TextColor(hex: "#e64980", name: "Rosa"),
+    ]
+
+    static let defaultHex = "#1e1e1e"
+}
+
 extension Color {
     init(hexString: String) {
         let cleaned = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

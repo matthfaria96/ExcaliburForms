@@ -44,6 +44,7 @@ const toNativeState = (appState: AppState) => ({
   tool: getActiveToolId(appState),
   hasSelection: Object.keys(appState.selectedElementIds).length > 0,
   theme: appState.theme,
+  strokeColor: appState.currentItemStrokeColor,
   highlightColor: appState.currentItemTextHighlight
     ? appState.currentItemHighlightColor
     : null,

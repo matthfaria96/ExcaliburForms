@@ -17,6 +17,8 @@ export type NativeMessage =
       tool: ToolId | null;
       hasSelection: boolean;
       theme: "light" | "dark";
+      /** the text tool's default text color */
+      strokeColor: string;
       /** the text tool's default marker color; `null` when the marker is off */
       highlightColor: string | null;
     }

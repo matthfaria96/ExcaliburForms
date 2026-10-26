@@ -31,6 +31,7 @@ final class EditorController: NSObject, ObservableObject {
     @Published private(set) var activeTool: Tool?
     @Published private(set) var hasSelection = false
     @Published private(set) var editorTheme: EditorTheme = .light
+    @Published private(set) var strokeColor: String? = TextColor.defaultHex
     @Published private(set) var highlightColor: String? = HighlightColor.defaultHex
     @Published var lastError: String?
 
@@ -121,6 +122,7 @@ final class EditorController: NSObject, ObservableObject {
         if let theme = body["theme"] as? String {
             editorTheme = theme == "dark" ? .dark : .light
         }
+        strokeColor = body["strokeColor"] as? String
         highlightColor = body["highlightColor"] as? String
     }
 
@@ -157,6 +159,11 @@ final class EditorController: NSObject, ObservableObject {
     /// Define a cor padrão do marca-texto da ferramenta texto (`nil` desliga).
     func setHighlight(_ color: String?) {
         invoke("window.excalibur.setHighlight(color)", arguments: ["color": color ?? NSNull()])
+    }
+
+    /// Define a cor padrão do texto.
+    func setStrokeColor(_ color: String) {
+        invoke("window.excalibur.setStrokeColor(color)", arguments: ["color": color])
     }
 
     func command(_ command: Command) {

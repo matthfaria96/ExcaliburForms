@@ -53,6 +53,8 @@ export type ExcaliburHostApi = {
   setTheme: (theme: string) => void;
   /** sets the text tool's default marker (`null` turns the marker off) */
   setHighlight: (color: string | null) => void;
+  /** sets the text tool's default text color */
+  setStrokeColor: (color: string) => void;
   command: (name: string) => boolean;
   exportImage: (request: ExportRequest) => Promise<ExportResult>;
 };
@@ -107,6 +109,9 @@ const Root = () => {
             ...(color !== null ? { currentItemHighlightColor: color } : {}),
           },
         });
+      },
+      setStrokeColor: (color) => {
+        requireApi().updateScene({ appState: { currentItemStrokeColor: color } });
       },
       command: (name) => {
         const action = COMMANDS[name];

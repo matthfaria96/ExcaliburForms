@@ -61,6 +61,7 @@ struct ContentView: View {
             ToolButton(tool: .text, isActive: editor.activeTool == .text) {
                 editor.setTool(.text)
             }
+            textColorSwatch
             highlightSwatch
             ToolButton(tool: .stickynote, isActive: editor.activeTool == .stickynote) {
                 editor.setTool(.stickynote)
@@ -122,6 +123,42 @@ struct ContentView: View {
             return Color.primary.opacity(0.07)
         }
         return .clear
+    }
+
+    /// Cor padrão do texto (o traço): um ponto ao lado do ícone que abre o
+    /// seletor de cores.
+    private var textColorSwatch: some View {
+        Menu {
+            ForEach(TextColor.options) { option in
+                Button {
+                    editor.setStrokeColor(option.hex)
+                } label: {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color(hexString: option.hex))
+                            .frame(width: 12, height: 12)
+                        Text(option.name)
+                        if editor.strokeColor == option.hex {
+                            Spacer()
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            ZStack {
+                Circle().fill(
+                    editor.strokeColor.map { Color(hexString: $0) } ?? Color.clear
+                )
+                Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+            }
+            .frame(width: 20, height: 20)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Cor padrão do texto")
     }
 
     /// Cor padrão do grifo da ferramenta texto: um ponto ao lado do ícone que
