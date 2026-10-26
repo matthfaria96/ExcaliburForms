@@ -12,16 +12,19 @@ struct BoardList: View {
     @FocusState private var renameFocused: Board.ID?
 
     var body: some View {
-        List(selection: $library.selectedID) {
-            ForEach(library.boards) { board in
-                row(board)
-                    .tag(board.id)
-                    .contextMenu { contextMenu(board) }
+        VStack(spacing: 0) {
+            header
+            List(selection: $library.selectedID) {
+                ForEach(library.boards) { board in
+                    row(board)
+                        .tag(board.id)
+                        .contextMenu { contextMenu(board) }
+                }
             }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            bottomBar
         }
-        .navigationTitle("Quadros")
-        .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) { bottomBar }
         .confirmationDialog(
             "Excluir quadro",
             isPresented: deleteConfirmation,
@@ -41,6 +44,18 @@ struct BoardList: View {
                 editor.loadBoard(board)
             }
         }
+    }
+
+    private var header: some View {
+        HStack {
+            Text("Quadros")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
     }
 
     // MARK: - Linhas
@@ -96,7 +111,6 @@ struct BoardList: View {
             }
         }
         .padding(10)
-        .background(.bar)
     }
 
     // MARK: - Ações

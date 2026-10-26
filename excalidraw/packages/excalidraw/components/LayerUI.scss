@@ -117,39 +117,21 @@
     }
   }
 
-  // Hosts with a minimal UI (the native app) keep the styles panel and the
-  // zoom/undo footer on the right edge instead of the left. A single
-  // `minmax(0, 1fr)` track keeps the panel's intrinsic width from growing the
-  // grid column past the viewport (which used to push it off-screen).
+  // Hosts with a minimal UI (the native app) use a docked properties panel on
+  // the right edge — fixed so it can never be pushed off-screen — with a small
+  // slide-in. The zoom/undo footer also sits on the right.
   .layer-ui__wrapper--minimal {
-    .App-menu_top {
-      grid-template-columns: minmax(0, 1fr);
-      align-items: flex-start;
-    }
-
     .App-menu_top > .App-menu_top__left {
-      grid-column: 1;
-      grid-row: 1;
-      justify-self: end;
-      max-width: 100%;
-      min-width: 0;
-    }
-
-    .App-menu_top > .shapes-section {
-      grid-column: 1;
-      grid-row: 1;
-    }
-
-    .App-menu_top > .layer-ui__wrapper__top-right {
-      grid-column: 1;
-      grid-row: 1;
-      justify-self: end;
-    }
-
-    .selected-shape-actions,
-    .selected-shape-actions-container {
-      max-width: 100%;
-      min-width: 0;
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      left: auto;
+      width: auto;
+      max-width: min(340px, calc(100vw - 28px));
+      max-height: calc(100vh - 28px);
+      overflow-y: auto;
+      z-index: 20;
+      animation: minimal-panel-in 0.16s ease-out;
     }
 
     .App-menu_bottom {
@@ -228,5 +210,16 @@
         color: black !important;
       }
     }
+  }
+}
+
+@keyframes minimal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

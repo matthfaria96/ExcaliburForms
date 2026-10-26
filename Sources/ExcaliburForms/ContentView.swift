@@ -9,14 +9,35 @@ struct ContentView: View {
 
     @AppStorage("appearance") private var appearance: Appearance = .system
     @State private var shapesHovering = false
+    @State private var boardsVisible = true
 
     var body: some View {
-        NavigationSplitView {
-            BoardList()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
-        } detail: {
+        ZStack(alignment: .topLeading) {
             EditorView(webView: editor.webView)
-                .navigationTitle(library.selectedBoard?.name ?? "ExcaliburForms")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            if boardsVisible {
+                BoardList()
+                    .frame(width: 250)
+                    .frame(maxHeight: .infinity)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.08))
+                    )
+                    .shadow(color: .black.opacity(0.16), radius: 16, y: 6)
+                    .padding(.leading, 12)
+                    .padding(.top, 52)
+                    .padding(.bottom, 12)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                    .zIndex(1)
+            }
+
+            floatingBoardButton
+                .padding(.leading, 12)
+                .padding(.top, 12)
+                .zIndex(2)
         }
         .frame(minWidth: 900, minHeight: 560)
         .toolbar { toolbarContent }
@@ -31,6 +52,25 @@ struct ContentView: View {
         .preferredColorScheme(colorScheme)
         .onAppear { applyAppearance() }
         .onChange(of: appearance) { _, _ in applyAppearance() }
+    }
+
+    /// Botão flutuante no canto superior esquerdo que abre/fecha a lista de
+    /// quadros (que flutua sobre o canvas, sem empurrar o conteúdo).
+    private var floatingBoardButton: some View {
+        Button {
+            withAnimation(.smooth(duration: 0.28)) {
+                boardsVisible.toggle()
+            }
+        } label: {
+            Image(systemName: "sidebar.left")
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 32, height: 32)
+        }
+        .buttonStyle(.plain)
+        .background(.ultraThinMaterial, in: Circle())
+        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1)))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        .help(boardsVisible ? "Ocultar quadros" : "Mostrar quadros")
     }
 
     // MARK: - Barra de ferramentas
