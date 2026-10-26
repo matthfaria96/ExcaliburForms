@@ -50,6 +50,8 @@ final class EditorController: NSObject, ObservableObject {
     init(library: BoardLibrary) {
         self.library = library
         let configuration = WKWebViewConfiguration()
+        // no on-disk web cache: a rebuilt page must always load fresh
+        configuration.websiteDataStore = .nonPersistent()
         configuration.setURLSchemeHandler(
             WebAssetsSchemeHandler(root: Self.webRoot),
             forURLScheme: WebAssetsSchemeHandler.scheme
