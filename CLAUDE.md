@@ -6,52 +6,72 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 
 - Usar o Excalidraw (https://github.com/excalidraw/excalidraw) como motor. **Não reescrever o editor**, preservar o que já funciona (imagens, seleção, mover, redimensionar, recorte, formas, setas, desenho livre, zoom, desfazer/refazer, exportação). Manter licença (MIT) e avisos.
 - Remover/simplificar ferramentas, menus e opções não essenciais.
-- Ferramentas essenciais: seleção, imagem, texto, **texto com marca-texto** (fundo colorido: amarelo, verde, azul, rosa, roxo; cor do texto e do fundo separadas), **nota adesiva**, formas, setas, desenho livre.
+- Ferramentas essenciais: seleção, imagem, texto, **texto com marca-texto**, **nota adesiva**, formas, setas, desenho livre.
 - Texto com tamanho, **peso**, cor e alinhamento.
-- Ordem de camadas (frente/trás), bloquear/desbloquear; anotações sempre podendo ficar acima das imagens.
-- **Vários quadros** numa barra lateral: criar, renomear, duplicar, abrir, excluir (com confirmação). Cada quadro guarda seu próprio estado. Salvamento automático e persistência local confiável (não só armazenamento do navegador).
+- Ordem de camadas (frente/trás), bloquear/desbloquear; **painel de camadas** para ver, selecionar, reordenar e apagar qualquer elemento.
+- **Vários quadros** num painel lateral: criar, renomear, duplicar, abrir, excluir (com confirmação). Cada quadro guarda seu próprio estado. Salvamento automático e persistência local confiável.
 - Exportar PNG e SVG (quadro, seleção ou área); copiar imagem para a área de transferência rapidamente.
-- Interface minimalista estilo macOS nativo, tema claro/escuro, atalhos de teclado do macOS, sem painéis que roubem área do canvas.
+- Interface **muito minimalista** estilo macOS: canvas limpo, painéis flutuantes/translúcidos, controles contextuais discretos, tema claro/escuro/sistema, atalhos do macOS.
+- **Cores vivas e vibrantes** (marca-texto neon, notas e preenchimentos sólidos) funcionando nos temas claro **e** escuro.
+- Texto: **sempre com marca-texto por padrão** (com opção explícita "sem fundo"), e quando texto e grifo têm a mesma cor, o **texto** é ajustado para ficar legível.
+- Notas adesivas com **texto preto**.
 - Critérios de conclusão: criar quadro e importar várias screenshots; posicioná-las e recortá-las; sobrepor textos, marca-textos, notas, setas e desenhos; mudar camadas sem perder elementos; criar e alternar quadros; fechar/reabrir sem perder nada; exportar com aparência fiel; excluir quadros sem afetar os outros.
 - Fluxo pedido: inspecionar, planejar, implementar em etapas, rodar testes e corrigir regressões.
 
-## Arquitetura escolhida
+## Arquitetura
 
-- `excalidraw/` — fork do monorepo (upstream `b7de45e`, commit base sem modificações). Mudanças no núcleo ficam em `packages/*`, seguindo os padrões do projeto.
-- `excalidraw/excalibur-web/` — página hospedeira (Vite, workspace do monorepo) com o editor em `UIOptions.minimalUI`, autosave por quadro e ponte `window.excalibur` para o Swift. Build: `npx vite build excalibur-web --config excalibur-web/vite.config.mts` (na pasta `excalidraw/`) → `excalibur-web/build` (fontes empacotadas, offline).
-- Raiz: pacote SwiftPM (macOS 14, ferramentas 5.9), no padrão dos outros apps do usuário (ViewTube):
-  - `Sources/ExcaliburCore` — núcleo puro e testado: `Board`, `BoardStore`, `SceneInspector`.
-  - `Sources/ExcaliburForms` — app SwiftUI: janela com lista de quadros + WKWebView com o editor.
+- `excalidraw/` — fork do monorepo (upstream `b7de45e`). Mudanças no núcleo ficam em `packages/*`, seguindo os padrões do projeto.
+- `excalidraw/excalibur-web/` — página hospedeira (Vite) com o editor em `UIOptions.minimalUI`, autosave por quadro e a ponte `window.excalibur` para o Swift. Build: `./node_modules/.bin/vite build excalibur-web --config excalibur-web/vite.config.mts` (na pasta `excalidraw/`) → `excalibur-web/build` (fontes empacotadas, offline).
+- Raiz: pacote SwiftPM (macOS 14, ferramentas 5.9):
+  - `Sources/ExcaliburCore` — núcleo puro e testado: `Board`, `BoardStore`, `SceneInspector` (10 testes).
+  - `Sources/ExcaliburForms` — app SwiftUI:
+    - `Editor/EditorController` — WKWebView no esquema `excalibur://` (serve `Resources/web` por `WebAssetsSchemeHandler`), handler de mensagens `excalibur` (proxy fraco), `WKUIDelegate` (NSOpenPanel para imagem), links externos no navegador, **web data store não persistente** (página sempre fresca). Recebe `ready`/`save`/`state`/`error`; chama `window.excalibur.*` via `callAsyncJavaScript(arguments:)` (nunca interpola texto em JS).
+    - `Boards/BoardLibrary` — estado observável sobre o `BoardStore` (fila de gravação própria).
+    - UI: `ContentView` (ZStack sobre o canvas), `LeftPanel` (painel flutuante translúcido com abas **Quadros/Camadas**, fecha ao clicar fora), `BoardList`, `LayerList`, barra inferior de propriedades e toolbar nativa com as ferramentas.
+    - `ExportService` — PNG/SVG × quadro/seleção/área visível, copiar PNG (⌘⇧C).
+    - `AppDelegate` — `applicationWillTerminate` faz `flush()` da página + `library.flushSaves()`.
   - Persistência: `~/Library/Application Support/ExcaliburForms/boards.json` (índice) e `Boards/<id>/scene.excalidraw` + `Boards/<id>/files/<fileId>.json` (cada imagem gravada uma vez). Escritas atômicas; excluir manda a pasta para o Lixo.
-- Build/teste Swift exigem `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`. Testes JS: `npx vitest run` na pasta `excalidraw/`.
+- Ponte (`excalibur-web/src/`): `bridge.ts` (mensagens), `App.tsx` (estado espelhado), `index.tsx` (API do host), `tools.ts` (ferramentas/atalhos), `autosave.ts`, `board.ts`, `exporter.ts`.
+  - Native → página: `loadBoard`, `flush`, `setTool`, `setTheme`, `setHighlight(color|null)`, `setStrokeColor`, `action(name, value)`, `layerAction(id, action)`, `command(name)`, `exportImage(request)`.
+  - Página → native: `ready`, `save` (scene + files novos), `state` (tool, hasSelection, theme, strokeColor, highlightColor, text selecionado, sticky selecionado, layers), `error`.
+- Build/teste Swift exigem `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`. Testes JS: `./node_modules/.bin/vitest run` na pasta `excalidraw/`.
 
 ## Fluxo de trabalho (pedido do usuário)
 
-- **Toda vez que o código do app for atualizado, instalar para o usuário testar**: rodar `scripts/build-app.sh --install` (build da página + Swift release + Liquiz Glass + assinatura + cópia para `/Applications` + `open`) e confirmar o app aberto. Não esperar o usuário pedir.
-- **Sempre terminar cada resposta dizendo se instalou o app ou não** (ex.: "Instalado em /Applications e aberto" / "Não instalei nesta rodada").
+- **Toda vez que o código do app for atualizado, instalar para o usuário testar**: rodar `scripts/build-app.sh --install` (build da página + Swift release + `vtool` Liquid Glass + assinatura ad-hoc + cópia para `/Applications` + `open`). Não esperar o usuário pedir.
+- **Sempre terminar cada resposta dizendo se instalou o app ou não**.
 - Sempre rodar os testes (`swift test` e `vitest run`) antes de instalar.
 - Fazer commit e `git push origin main` das mudanças (repositório público `matthfaria96/ExcaliburForms`).
+- Se o usuário disser que "está na versão antiga": encerrar o app, limpar `~/Library/WebKit/com.excaliburforms.app`, remover/reinstalar `/Applications/ExcaliburForms.app`, desregistrar a cópia de `build/` do LaunchServices (`lsregister -u`) e reabrir.
 
-## Feito até agora
+## Feito até agora (24 commits)
 
-1. Commit `06bfce6` — Excalidraw vendorizado sem modificações.
-2. Commit `5bf78b3` — núcleo do editor:
-   - Texto ganhou `fontWeight` ("bold") e `highlighted` (marca-texto por linha, cor em `backgroundColor`), desenhados no canvas, no SVG exportado e durante a edição; `restore` preserva/normaliza. Helper `packages/element/src/textHighlight.ts`.
-   - Marca-texto é um domínio de cor próprio (`colorTargets.ts`): paleta `HIGHLIGHT_BACKGROUND_PICKS`, estados `currentItemHighlightColor`, `currentItemTextHighlight`, `currentItemFontWeight`, `colorTopPicks.highlightBackground`.
-   - Ações de painel `changeFontWeight` e `toggleTextHighlight` (`actions/actionTextStyle.tsx`), com locais en e pt-BR.
-   - `UIOptions.minimalUI`: esconde toolbar de formas, menu principal, biblioteca, ajuda e itens avançados do menu de contexto.
-   - Nota adesiva e recorte de imagem **já existiam** no upstream (ferramenta `stickynote`, `cropEditor`) e foram reaproveitados.
-   - Suíte completa: 2578 testes passando; snapshots atualizados (só os 4 campos novos de estado) + `tests/textStyle.test.tsx`.
-3. Commit `a48fdf0` — `api.executeAction(name)` na API imperativa (com testes) e a página `excalibur-web` (`bridge.ts`, `tools.ts`, `autosave.ts`, `exporter.ts`, `board.ts`, `App.tsx`, `index.tsx`, `host.test.ts` com 9 testes). Build da página OK; typecheck limpo.
-4. **Não commitado ainda**: `.gitignore` já existe; `Package.swift`, `Sources/ExcaliburCore/*` e `Tests/ExcaliburCoreTests/BoardStoreTests.swift` (10 testes passando), `Sources/ExcaliburForms/Editor/WebAssetsSchemeHandler.swift` (serve a página por `excalibur://app/`), `Sources/ExcaliburForms/Boards/BoardLibrary.swift`, e um `Sources/ExcaliburForms/main.swift` provisório (só `import Foundation`, para o pacote compilar; deve ser removido quando existir o `@main`).
+1. `06bfce6` — Excalidraw vendorizado sem modificações.
+2. `5bf78b3` — Texto com `fontWeight`/`highlighted` (marca-texto por linha), domínio de cor próprio, `minimalUI`, nota adesiva e recorte reaproveitados.
+3. `a48fdf0` — `api.executeAction(name)` e a página `excalibur-web` com a ponte.
+4. `57d0356` — App nativo: `EditorController`, UI SwiftUI, `AppDelegate`, `scripts/build-app.sh`, README/NOTICE.
+5. `5bf0124` — Ícone do app (`.icns` + gerador `scripts/make-icon.py`).
+6. `8b87057` — Texto e marca-texto num só botão, cores do grifo mais vivas, polish da toolbar.
+7. `0908197` — Texto com marca-texto por padrão + seletor de cor padrão ao lado do ícone.
+8. `6fa7f25` — Remoção dos `.env` do upstream (continham chaves Firebase públicas; alertas do GitHub resolvidos).
+9. `a57329e` — Menu de contexto minimalista + swatches de cor do texto/grifo.
+10. `7700c8d` — Painel/popovers mantidos dentro da tela.
+11. `a145cfc` — Lista de quadros flutuante/translúcida + botão flutuante no canto; painel à direita.
+12. `1acbe72` — Painel de propriedades nativo à direita + fechar lista ao clicar fora.
+13. `ded9664` — Painel de camadas; correção da cor do texto (`changeStrokeColor` precisa de `{ color }`); swatches mais claros.
+14. `2a4254a` — Painel também para notas adesivas.
+15. `19c5a65` — Paleta mais viva (grifo neon, notas/preenchimentos saturados) + painel refinado.
+16. `80b3ff7` — Correção do filtro de tema escuro (fundos mantêm a cor exata; texto de grifo escuro; SVG idem).
+17. `9f732d1` — Propriedades movidas para uma barra inferior centralizada.
+18. `a5032df` — Texto sempre com grifo, texto de nota preto, `getReadableTextColor` (texto ajusta para ler sobre o grifo); cinza removido.
+19. `5d9ad53` — Documentação: reportar sempre se instalou.
+20. `58232bc` — Opção "sem fundo" (branco com risco vermelho), swatches agrupados ao "Aa" e refletindo as cores reais do texto.
+21. `e136e72` — Web data store não persistente (sem cache entre builds).
+22. `070445f` — Remoção das cores do menu inferior (só Tamanho/Peso/Alinhamento, segmentados com chip ativo em accent).
 
-## Próximos passos (ainda não feitos)
+## Estado atual / pendências
 
-- `EditorController`: WKWebView com handler de mensagens `excalibur` (proxy fraco), esquema `excalibur://`, `WKUIDelegate` com `NSOpenPanel` para o `<input type=file>` da ferramenta de imagem, links externos no navegador. Recebe `ready`/`save`/`state`/`error`; chama `window.excalibur.loadBoard/flush/setTool/setTheme/command/exportImage` via `callAsyncJavaScript(arguments:)` (nunca interpolar texto em JS).
-- Validar `boardId` e ids de arquivo vindos da página (o `BoardStore` já rejeita ids inseguros).
-- UI SwiftUI: `NavigationSplitView` (lista com criar, renomear inline, duplicar, excluir com confirmação; evitar sidebar recolhida, que gera "»" vazio no macOS 26), toolbar nativa com as ferramentas (seleção, mão, imagem, texto, marca-texto, nota, formas em menu, seta, desenho livre), menu de exportação (PNG/SVG × quadro/seleção/área visível, copiar PNG ⌘⇧C, exportar ⌘E), menu Quadro (⌘N etc.), comandos de camadas/zoom/desfazer via `command`, aparência Sistema/Claro/Escuro.
-- `AppDelegate`: no encerramento, `flush()` na página + `library.flushSaves()` antes de sair.
-- `scripts/build-app.sh` no padrão do ViewTube (copiar `excalibur-web/build` para `Contents/Resources/web`, `Info.plist`, ícone, `vtool` regravando o SDK para Liquid Glass, assinatura ad-hoc, `--install`).
-- Verificar no app real os 8 critérios de conclusão (colar screenshot do clipboard e arrastar/soltar no WKWebView precisam ser testados), capturando só a janela do app.
-- README/NOTICE com a licença MIT do Excalidraw e as fontes.
+- **Verificar no app real** os 8 critérios de conclusão (colar screenshot do clipboard, arrastar/soltar no WKWebView, recorte, camadas, fechar/reabrir, exportação, exclusão de quadros) — interativo, não automatizável aqui.
+- Cores no painel inferior foram removidas a pedido; o acesso a cor de texto/grifo ficou nos dois swatches agrupados ao "Aa" na toolbar (avaliar se devem sumir também e tudo virar padrão).
+- Rodar `scripts/build-app.sh --install` + reiniciar o app após cada mudança.
 - Não publicar release/site sem pedido explícito do usuário.
