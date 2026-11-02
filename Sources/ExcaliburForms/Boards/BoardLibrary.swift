@@ -93,9 +93,14 @@ final class BoardLibrary: ObservableObject {
     }
 
     /// Grava fora da thread principal, na ordem de chegada.
-    func save(id: Board.ID, scene: String, files: [Data]) {
+    /// `rawFiles` são as imagens como vieram da página: serializá-las é caro.
+    func save(id: Board.ID, scene: String, rawFiles: [Any]) {
         guard let store else { return }
         saveQueue.async { [weak self] in
+            let files: [Data] = rawFiles.compactMap { raw in
+                guard let dict = raw as? [String: Any] else { return nil }
+                return try? JSONSerialization.data(withJSONObject: dict)
+            }
             do {
                 try store.save(id: id, scene: scene, files: files)
                 let boards = store.boards

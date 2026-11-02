@@ -77,6 +77,8 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 25. Ícone: camadas do Icon Composer em `Assets/AppIcon.icon` (círculo, cartão de vidro, traço), geradas por `ICON_LAYERS_DIR=Assets/AppIcon.icon/Assets <venv>/bin/python scripts/make-icon.py <iconset> Resources/AppIcon.png`; o build compila com `actool` (Assets.car + .icns). Sem isso o macOS 26+ põe o ícone numa moldura cinza. O nome do ícone leva um hash das camadas (cache do Dock/Launchpad); a instalação apaga o app antigo antes de copiar e tira `build/` do LaunchServices.
 - Se o Dock/Launchpad mostrar ícone velho: `rm -rf $(getconf DARWIN_USER_CACHE_DIR){com.apple.dock.iconcache,com.apple.iconservices,com.apple.iconservicesagent}; killall iconservicesagent Dock`.
 
+26. Fluidez com muitas imagens: pinça no trackpad (`onGestureChange`) passou a usar `shouldCacheIgnoreZoom`, sem redesenhar os bitmaps a cada quadro; `EXCALIDRAW_THROTTLE_RENDER` ligado (um desenho por quadro de tela); bitmaps vencidos só pelo zoom são refeitos com orçamento de 6 ms por quadro (`setStaleZoomBudget`); imagens decodificadas ao carregar (`image.decode`); estado nativo limitado a cada 80 ms, com zoom numa mensagem própria (`zoom`); autosave após 1 s de pausa; serialização das imagens fora da thread principal.
+
 ## Estado atual / pendências
 
 - **Verificar no app real** os 8 critérios de conclusão (colar screenshot do clipboard, arrastar/soltar no WKWebView, recorte, camadas, fechar/reabrir, exportação, exclusão de quadros) — interativo, não automatizável aqui.

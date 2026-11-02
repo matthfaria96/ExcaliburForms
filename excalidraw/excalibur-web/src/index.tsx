@@ -1,6 +1,8 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
+import { setStaleZoomBudget } from "@excalidraw/element";
+
 import type { ActionName } from "@excalidraw/excalidraw/actions/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
@@ -17,6 +19,10 @@ import type { BoardPayload } from "./board";
 import type { ExportRequest, ExportResult } from "./exporter";
 
 type Theme = "light" | "dark";
+
+// one canvas paint per display frame, instead of one per React commit
+window.EXCALIDRAW_THROTTLE_RENDER = true;
+setStaleZoomBudget(6);
 
 /** Commands of the native menus, run as the editor's own actions. */
 const COMMANDS: Readonly<Record<string, ActionName>> = {

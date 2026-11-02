@@ -5,7 +5,11 @@ import {
   THEME,
   throttleRAF,
 } from "@excalidraw/common";
-import { isElementLink } from "@excalidraw/element";
+import {
+  beginElementCanvasFrame,
+  didDeferElementCanvas,
+  isElementLink,
+} from "@excalidraw/element";
 import { createPlaceholderEmbeddableLabel } from "@excalidraw/element";
 import { getBoundTextElement } from "@excalidraw/element";
 import {
@@ -666,6 +670,27 @@ const _renderStaticScene = ({
   });
 };
 
+/** last config per canvas: a follow-up frame yields to any newer render */
+const latestStaticConfigs = new WeakMap<
+  HTMLCanvasElement,
+  StaticSceneRenderConfig
+>();
+
+/** renders, and keeps rendering while bitmaps were deferred to later frames */
+const renderFrame = (config: StaticSceneRenderConfig) => {
+  beginElementCanvasFrame();
+  _renderStaticScene(config);
+  if (!didDeferElementCanvas() || !config.canvas) {
+    return;
+  }
+  const ownerWindow = config.canvas.ownerDocument.defaultView ?? window;
+  ownerWindow.requestAnimationFrame(() => {
+    if (latestStaticConfigs.get(config.canvas) === config) {
+      renderFrame(config);
+    }
+  });
+};
+
 type StaticSceneThrottle = ReturnType<typeof throttleRAF>;
 
 const staticSceneThrottles = new WeakMap<
@@ -687,7 +712,7 @@ const getStaticSceneThrottle = (canvas: HTMLCanvasElement) => {
   if (!entry) {
     entry = {
       throttle: throttleRAF((config: StaticSceneRenderConfig) => {
-        _renderStaticScene(config);
+        renderFrame(config);
       }, ownerWindow),
       ownerWindow,
     };
@@ -720,10 +745,11 @@ export const renderStaticScene = (
   renderConfig: StaticSceneRenderConfig,
   throttle?: boolean,
 ) => {
+  latestStaticConfigs.set(renderConfig.canvas, renderConfig);
   if (throttle) {
     renderStaticSceneThrottled(renderConfig);
     return;
   }
 
-  _renderStaticScene(renderConfig);
+  renderFrame(renderConfig);
 };

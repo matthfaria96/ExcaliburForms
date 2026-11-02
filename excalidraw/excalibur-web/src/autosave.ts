@@ -10,8 +10,12 @@ import type {
 
 import { postToNative, reportError } from "./bridge";
 
-/** quiet time after the last change before writing */
-const SAVE_DELAY_MS = 400;
+/**
+ * quiet time after the last change before writing: serializing runs on the
+ * main thread, so it must not land in the short pauses of a pan or a zoom
+ * (quitting and switching boards flush right away)
+ */
+const SAVE_DELAY_MS = 1000;
 
 type Snapshot = {
   elements: readonly ExcalidrawElement[];

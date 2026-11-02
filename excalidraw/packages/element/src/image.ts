@@ -27,7 +27,16 @@ export const loadHTMLImageElement = (
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = createImage();
     image.onload = () => {
-      resolve(image);
+      // decode off the main thread now; left to the first draw, it stalls
+      // the frame in which the image scrolls into view
+      if (typeof image.decode === "function") {
+        image.decode().then(
+          () => resolve(image),
+          () => resolve(image),
+        );
+      } else {
+        resolve(image);
+      }
     };
     image.onerror = (error) => {
       reject(error);

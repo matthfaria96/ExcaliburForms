@@ -108,6 +108,8 @@ final class EditorController: NSObject, ObservableObject {
             handleSave(body)
         case "state":
             handleState(body)
+        case "zoom":
+            if let value = body["zoom"] as? Double, value > 0, value != zoom { zoom = value }
         case "error":
             lastError = body["message"] as? String
         default:
@@ -123,18 +125,12 @@ final class EditorController: NSObject, ObservableObject {
             lastError = "O editor enviou um quadro inválido."
             return
         }
-        let rawFiles = body["files"] as? [Any] ?? []
-        let files: [Data] = rawFiles.compactMap { raw in
-            guard let dict = raw as? [String: Any] else { return nil }
-            return try? JSONSerialization.data(withJSONObject: dict)
-        }
-        library.save(id: boardId, scene: scene, files: files)
+        library.save(id: boardId, scene: scene, rawFiles: body["files"] as? [Any] ?? [])
     }
 
     private func handleState(_ body: [String: Any]) {
         activeTool = (body["tool"] as? String).flatMap(Tool.init(rawValue:))
         hasSelection = body["hasSelection"] as? Bool ?? false
-        if let value = body["zoom"] as? Double, value > 0 { zoom = value }
         if let theme = body["theme"] as? String {
             editorTheme = theme == "dark" ? .dark : .light
         }
@@ -188,7 +184,7 @@ final class EditorController: NSObject, ObservableObject {
         selectionTypes = Set(body["selectionTypes"] as? [String] ?? [])
         selectionLocked = body["locked"] as? Bool ?? false
 
-        layers = (body["layers"] as? [[String: Any]] ?? []).compactMap { dict in
+        let newLayers: [LayerItem] = (body["layers"] as? [[String: Any]] ?? []).compactMap { dict in
             guard let id = dict["id"] as? String,
                   let label = dict["label"] as? String,
                   let type = dict["type"] as? String
@@ -200,6 +196,7 @@ final class EditorController: NSObject, ObservableObject {
                 selected: dict["selected"] as? Bool ?? false
             )
         }
+        if newLayers != layers { layers = newLayers }
     }
 
     // MARK: - Chamadas à página

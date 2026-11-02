@@ -19,8 +19,6 @@ export type NativeMessage =
       theme: "light" | "dark";
       /** the text tool's default text color */
       strokeColor: string;
-      /** zoom factor (1 = 100%) */
-      zoom: number;
       /** the text and note tools' default font family */
       fontFamily: number;
       /** the text tool's default marker color; `null` when the marker is off */
@@ -62,6 +60,8 @@ export type NativeMessage =
       /** whether a selected element is locked */
       locked: boolean;
     }
+  /** zoom factor (1 = 100%), apart from "state": it changes on every frame */
+  | { type: "zoom"; zoom: number }
   | { type: "error"; message: string };
 
 type WebKitBridge = {

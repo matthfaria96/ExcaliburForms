@@ -1,3 +1,4 @@
+import throttle from "lodash.throttle";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Excalidraw, getStrokeWidthByKey } from "@excalidraw/excalidraw";
@@ -27,6 +28,8 @@ import { toInitialData } from "./board";
 
 import type { Autosave } from "./autosave";
 import type { BoardPayload } from "./board";
+
+const NATIVE_SYNC_MS = 80;
 
 const UI_OPTIONS: Partial<UIOptions> = {
   // the native window brings the toolbar, menus and board list
@@ -204,8 +207,6 @@ const toNativeState = (
   hasSelection: Object.keys(appState.selectedElementIds).length > 0,
   theme: appState.theme,
   strokeColor: appState.currentItemStrokeColor,
-  /** zoom factor (1 = 100%) for the native zoom control */
-  zoom: Math.round(appState.zoom.value * 100) / 100,
   fontFamily: appState.currentItemFontFamily,
   highlightColor: appState.currentItemTextHighlight
     ? appState.currentItemHighlightColor
@@ -255,19 +256,37 @@ export const BoardEditor = ({ board, theme, dotGrid, onApi }: Props) => {
   // leaving the board (switch, reload) writes what's pending
   useEffect(() => () => autosave.flush(), [autosave]);
 
+  // onChange runs on every frame of a pan, zoom or drag: the native mirror is
+  // refreshed at most every NATIVE_SYNC_MS, first and last change included
+  const syncNative = useMemo(() => {
+    let lastZoom = 0;
+    return throttle(
+      (appState: AppState, elements: readonly ExcalidrawElement[]) => {
+        const zoom = Math.round(appState.zoom.value * 100) / 100;
+        if (zoom !== lastZoom) {
+          lastZoom = zoom;
+          postToNative({ type: "zoom", zoom });
+        }
+        const nativeState = toNativeState(appState, elements);
+        const key = JSON.stringify(nativeState);
+        if (key !== lastNativeState.current) {
+          lastNativeState.current = key;
+          postToNative({ type: "state", ...nativeState });
+        }
+      },
+      NATIVE_SYNC_MS,
+    );
+  }, []);
+  useEffect(() => () => syncNative.cancel(), [syncNative]);
+
   const onChange = useCallback(
     (...[elements, appState, files]: Parameters<
       NonNullable<React.ComponentProps<typeof Excalidraw>["onChange"]>
     >) => {
       autosave.schedule({ elements, appState, files });
-      const nativeState = toNativeState(appState, elements);
-      const key = JSON.stringify(nativeState);
-      if (key !== lastNativeState.current) {
-        lastNativeState.current = key;
-        postToNative({ type: "state", ...nativeState });
-      }
+      syncNative(appState, elements);
     },
-    [autosave],
+    [autosave, syncNative],
   );
 
   return (

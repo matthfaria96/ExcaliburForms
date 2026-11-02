@@ -5995,6 +5995,12 @@ class App extends React.Component<AppProps, AppState> {
           preserveScrollConstraintsSnapBack: true,
         },
       );
+      // like wheel and touch zoom: keep the bitmaps while pinching, or every
+      // visible element is rasterized again on every frame of the gesture
+      if (!this.state.shouldCacheIgnoreZoom) {
+        this.setState({ shouldCacheIgnoreZoom: true });
+      }
+      this.resetShouldCacheIgnoreZoomDebounced();
     }
   });
 

@@ -782,6 +782,28 @@ export const elementWithCanvasCache = new WeakMap<
   ExcalidrawElementWithCanvas
 >();
 
+/**
+ * Time one frame may spend re-rasterizing bitmaps that only went stale by zoom.
+ * Past it, elements keep their old bitmap (resampled) and are redone in the
+ * next frames, so a zoom settling over many images doesn't stall in one frame.
+ * Off unless the host sets it.
+ */
+let staleZoomBudgetMs = Infinity;
+let frameStartedAt = 0;
+let hasDeferredElementCanvas = false;
+
+export const setStaleZoomBudget = (ms: number) => {
+  staleZoomBudgetMs = ms;
+};
+
+export const beginElementCanvasFrame = () => {
+  frameStartedAt = performance.now();
+  hasDeferredElementCanvas = false;
+};
+
+/** whether the frame left bitmaps to redo, so another frame must follow */
+export const didDeferElementCanvas = () => hasDeferredElementCanvas;
+
 const generateElementWithCanvas = (
   element: NonDeletedExcalidrawElement,
   elementsMap: NonDeletedSceneElementsMap,
@@ -802,15 +824,25 @@ const generateElementWithCanvas = (
   const containingFrameOpacity =
     getContainingFrame(element, elementsMap)?.opacity || 100;
 
-  if (
+  const isStaleBeyondZoom =
     !prevElementWithCanvas ||
-    shouldRegenerateBecauseZoom ||
     prevElementWithCanvas.theme !== appState.theme ||
     prevElementWithCanvas.deviceScale !== renderConfig.scale ||
     prevElementWithCanvas.environment !== renderEnvironment ||
     prevElementWithCanvas.imageCrop !== imageCrop ||
-    prevElementWithCanvas.containingFrameOpacity !== containingFrameOpacity
+    prevElementWithCanvas.containingFrameOpacity !== containingFrameOpacity;
+
+  if (
+    !isStaleBeyondZoom &&
+    shouldRegenerateBecauseZoom &&
+    !renderConfig.isExporting &&
+    performance.now() - frameStartedAt >= staleZoomBudgetMs
   ) {
+    hasDeferredElementCanvas = true;
+    return prevElementWithCanvas;
+  }
+
+  if (isStaleBeyondZoom || shouldRegenerateBecauseZoom) {
     const elementWithCanvas = generateElementCanvas(
       element,
       elementsMap,
@@ -850,8 +882,11 @@ const generateElementWithCanvas = (
 const canSnapElement = (
   element: ExcalidrawElement,
   appState: StaticCanvasAppState | InteractiveCanvasAppState,
+  /** zoom of the bitmap about to be drawn; a deferred one gets resampled */
+  bitmapZoom: number,
 ) =>
   !appState?.shouldCacheIgnoreZoom &&
+  bitmapZoom === appState.zoom.value &&
   (!element.angle || isRightAngleRads(element.angle));
 
 /**
@@ -954,7 +989,7 @@ const drawElementFromCanvas = (
 
     const transform = context.getTransform();
 
-    if (canSnapElement(element, appState)) {
+    if (canSnapElement(element, appState, elementWithCanvas.zoomValue)) {
       // blit the cached bitmap on whole device pixels. Nearest-neighbor at a
       // fractional offset is a pixel-exact copy shifted to the nearest pixel
       // — except at an exact half pixel, where a GPU-accelerated canvas
@@ -1322,7 +1357,7 @@ const drawElement = (
 
         // see `canSnapElement` for why not during zoom gestures or at
         // other angles
-        if (canSnapElement(element, appState)) {
+        if (canSnapElement(element, appState, elementWithCanvas.zoomValue)) {
           // Disabling smoothing makes output much sharper, especially for
           // text. Unless for non-right angles, where the aliasing is really
           // terrible on Chromium.
