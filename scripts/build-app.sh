@@ -17,6 +17,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="ExcaliburForms"
 BUNDLE_ID="com.excaliburforms.app"
 MIN_OS="14.0"
+# Versão publicada (Sparkle compara CFBundleVersion: subir a cada release).
+VERSION="1.0.0"
+BUILD_NUMBER="1"
+# Kit de publicação do witchmymac.com (certificado, chaves do Sparkle, DMG).
+WITCHMYMAC_RELEASE="${WITCHMYMAC_RELEASE:-$HOME/Documents/VSCode/witchmymac-release}"
 LIQUID_GLASS_SDK="${LIQUID_GLASS_SDK:-26.0}"
 
 BUILD_DIR="$ROOT/build"
@@ -60,6 +65,11 @@ echo "==> Montando $APP"
 rm -rf "$APP"
 mkdir -p "$MACOS_DIR" "$RESOURCES"
 cp "$BIN" "$MACOS_DIR/$APP_NAME"
+# Sparkle (atualizações dentro do app). Os serviços XPC são só para apps em sandbox.
+mkdir -p "$CONTENTS/Frameworks"
+ditto "$(dirname "$BIN")/Sparkle.framework" "$CONTENTS/Frameworks/Sparkle.framework"
+rm -rf "$CONTENTS/Frameworks/Sparkle.framework/Versions/B/XPCServices" "$CONTENTS/Frameworks/Sparkle.framework/XPCServices"
+install_name_tool -add_rpath "@executable_path/../Frameworks" "$MACOS_DIR/$APP_NAME"
 cp -R "$WEB_ROOT" "$RESOURCES/web"
 # a pasta de idioma faz o macOS usar o português nos menus e janelas do sistema
 mkdir -p "$RESOURCES/pt-BR.lproj"
@@ -84,8 +94,8 @@ cat > "$CONTENTS/Info.plist" <<PLIST
     <key>CFBundleName</key><string>$APP_NAME</string>
     <key>CFBundleDisplayName</key><string>$APP_NAME</string>
     <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
-    <key>CFBundleVersion</key><string>1.0</string>
-    <key>CFBundleShortVersionString</key><string>1.0</string>
+    <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>
+    <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleExecutable</key><string>$APP_NAME</string>
     <key>CFBundleIconFile</key><string>$ICON_NAME</string>
@@ -94,6 +104,11 @@ cat > "$CONTENTS/Info.plist" <<PLIST
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.graphics-design</string>
+    <key>SUFeedURL</key><string>https://witchmymac.com/appcast/excaliburforms.xml</string>
+    <key>SUPublicEDKey</key><string>yhoDaYLDki5BV0c44pefouDhxbliuGqLKxXKXXK1Pb0=</string>
+    <key>SUEnableAutomaticChecks</key><true/>
+    <key>SUAutomaticallyUpdate</key><false/>
+    <key>SUScheduledCheckInterval</key><integer>86400</integer>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026. Editor baseado no Excalidraw (licença MIT).</string>
 </dict>
 </plist>
@@ -138,9 +153,16 @@ else
   echo "aviso: vtool não encontrado; pulando rewrite de SDK" >&2
 fi
 
-# 5) Assinatura ad-hoc (após o vtool, que invalida assinaturas).
-echo "==> Assinando (ad-hoc)"
-codesign --force --deep --sign - "$APP"
+# 5) Assinatura (após o vtool, que invalida assinaturas): certificado witchmymac
+#    quando o kit de publicação existe (o mesmo em toda versão, exigido pelo
+#    Sparkle), senão ad-hoc.
+if [[ -x "$WITCHMYMAC_RELEASE/sign-app.sh" ]]; then
+  echo "==> Assinando (witchmymac)"
+  "$WITCHMYMAC_RELEASE/sign-app.sh" "$APP"
+else
+  echo "==> Assinando (ad-hoc)"
+  codesign --force --deep --sign - "$APP"
+fi
 
 # 6) Instalação.
 if [[ "$INSTALL" == "1" ]]; then

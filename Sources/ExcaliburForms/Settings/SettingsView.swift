@@ -107,6 +107,10 @@ struct AboutView: View {
                     .textSelection(.enabled)
                     .padding(.top, 4)
 
+                CheckForUpdatesButton()
+                    .controlSize(.small)
+                    .padding(.top, 10)
+
                 Text("Um quadro infinito para juntar screenshots, anotar por cima com texto, marca-texto, notas, setas e desenhos, e organizar referências. Tudo fica salvo no seu Mac.")
                     .font(.system(size: 13))
                     .foregroundStyle(.primary.opacity(0.75))
@@ -123,7 +127,7 @@ struct AboutView: View {
                     .padding(.top, 12)
 
                 HStack(spacing: 18) {
-                    Link("witchmymac.com", destination: URL(string: "http://witchmymac.com")!)
+                    Link("witchmymac.com", destination: URL(string: "https://witchmymac.com/excaliburforms/")!)
                     Button("Licenças de código aberto") { showLicenses = true }
                         .buttonStyle(.link)
                 }

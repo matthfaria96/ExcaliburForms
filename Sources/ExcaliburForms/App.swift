@@ -29,6 +29,9 @@ struct ExcaliburFormsApp: App {
         .windowToolbarStyle(.unified)
         .defaultSize(width: 1240, height: 800)
         .commands {
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton()
+            }
             fileCommands
             editCommands
             viewCommands
@@ -175,6 +178,10 @@ extension ExcaliburFormsApp {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     weak var library: BoardLibrary?
     weak var editor: EditorController?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        MainActor.assumeIsolated { AppUpdater.shared.start() }
+    }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true

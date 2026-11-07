@@ -7,7 +7,7 @@ import {
   STROKE_WIDTH_KEYS,
   isTransparent,
 } from "@excalidraw/common";
-import { isHighlightedText } from "@excalidraw/element";
+import { hashElementsVersion, isHighlightedText } from "@excalidraw/element";
 
 import type {
   AppState,
@@ -198,6 +198,33 @@ const selectedShape = (
   };
 };
 
+/**
+ * Everything toNativeState reads. A pan or a zoom changes none of it, so the
+ * (whole-scene) mirror is rebuilt only when one of these changes.
+ */
+export const nativeStateInputs = (
+  appState: AppState,
+  elements: readonly ExcalidrawElement[],
+): readonly unknown[] => [
+  hashElementsVersion(elements),
+  elements.length,
+  // replaced (never mutated) whenever the selection changes
+  appState.selectedElementIds,
+  appState.activeTool.type,
+  appState.theme,
+  appState.currentItemStrokeColor,
+  appState.currentItemBackgroundColor,
+  appState.currentItemFontFamily,
+  appState.currentItemTextHighlight,
+  appState.currentItemHighlightColor,
+  appState.currentItemStrokeWidthKey,
+  appState.currentItemFillStyle,
+  appState.currentItemStrokeStyle,
+];
+
+export const sameInputs = (a: readonly unknown[], b: readonly unknown[]) =>
+  a.length === b.length && a.every((value, index) => value === b[index]);
+
 /** state the native toolbar mirrors; posted only when it changes */
 const toNativeState = (
   appState: AppState,
@@ -260,6 +287,7 @@ export const BoardEditor = ({ board, theme, dotGrid, onApi }: Props) => {
   // refreshed at most every NATIVE_SYNC_MS, first and last change included
   const syncNative = useMemo(() => {
     let lastZoom = 0;
+    let lastInputs: readonly unknown[] = [];
     return throttle(
       (appState: AppState, elements: readonly ExcalidrawElement[]) => {
         const zoom = Math.round(appState.zoom.value * 100) / 100;
@@ -267,6 +295,11 @@ export const BoardEditor = ({ board, theme, dotGrid, onApi }: Props) => {
           lastZoom = zoom;
           postToNative({ type: "zoom", zoom });
         }
+        const inputs = nativeStateInputs(appState, elements);
+        if (sameInputs(inputs, lastInputs)) {
+          return;
+        }
+        lastInputs = inputs;
         const nativeState = toNativeState(appState, elements);
         const key = JSON.stringify(nativeState);
         if (key !== lastNativeState.current) {

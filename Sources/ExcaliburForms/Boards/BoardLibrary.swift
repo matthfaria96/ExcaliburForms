@@ -82,11 +82,27 @@ final class BoardLibrary: ObservableObject {
 
     // MARK: - Conteúdo
 
-    func loadContent(_ id: Board.ID) -> BoardContent? {
+    /// Lê o quadro e decodifica as imagens fora da thread principal, depois das
+    /// gravações pendentes (reabrir um quadro logo após editá-lo traz a versão nova).
+    func loadPayload(_ id: Board.ID) async -> BoardPayload? {
         guard let store else { return nil }
-        do {
-            return try store.loadContent(id: id)
-        } catch {
+        let result: Result<BoardPayload, Error> = await withCheckedContinuation { continuation in
+            saveQueue.async {
+                continuation.resume(returning: Result {
+                    let content = try store.loadContent(id: id)
+                    return BoardPayload(
+                        scene: content.scene,
+                        files: content.files.map { data in
+                            (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+                        }
+                    )
+                })
+            }
+        }
+        switch result {
+        case .success(let payload):
+            return payload
+        case .failure(let error):
             errorMessage = "Não foi possível abrir o quadro: \(error.localizedDescription)"
             return nil
         }
@@ -138,4 +154,10 @@ final class BoardLibrary: ObservableObject {
         while names.contains("\(base) \(number)") { number += 1 }
         return "\(base) \(number)"
     }
+}
+
+/// Conteúdo de um quadro pronto para a página (imagens já decodificadas).
+struct BoardPayload: @unchecked Sendable {
+    let scene: String?
+    let files: [[String: Any]]
 }

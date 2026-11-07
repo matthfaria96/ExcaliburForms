@@ -9,6 +9,7 @@ import type {
   BinaryFiles,
 } from "@excalidraw/excalidraw/types";
 
+import { nativeStateInputs, sameInputs } from "./App";
 import { createAutosave } from "./autosave";
 import { parseBoardPayload, toInitialData } from "./board";
 import { getActiveToolId, isToolId } from "./tools";
@@ -148,5 +149,28 @@ describe("tools", () => {
     expect(isToolId("highlight")).toBe(false);
     expect(isToolId("frame")).toBe(false);
     expect(isToolId(3)).toBe(false);
+  });
+});
+
+describe("native state inputs", () => {
+  it("ignore a pan or a zoom, follow element and selection changes", () => {
+    const rect = API.createElement({ type: "rectangle" });
+    const appState = getDefaultAppState() as AppState;
+    const before = nativeStateInputs(appState, [rect]);
+    const panned = {
+      ...appState,
+      scrollX: 120,
+      zoom: { value: 2 },
+    } as AppState;
+    expect(sameInputs(before, nativeStateInputs(panned, [rect]))).toBe(true);
+
+    const moved = { ...rect, x: rect.x + 10, versionNonce: rect.versionNonce + 1 };
+    expect(sameInputs(before, nativeStateInputs(appState, [moved]))).toBe(false);
+
+    const selected = {
+      ...appState,
+      selectedElementIds: { [rect.id]: true },
+    } as AppState;
+    expect(sameInputs(before, nativeStateInputs(selected, [rect]))).toBe(false);
   });
 });

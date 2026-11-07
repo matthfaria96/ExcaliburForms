@@ -4,11 +4,15 @@ import PackageDescription
 let package = Package(
     name: "ExcaliburForms",
     platforms: [.macOS(.v14)],
+    dependencies: [
+        // Atualizações dentro do app (feed em witchmymac.com/appcast/excaliburforms.xml).
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
+    ],
     targets: [
         // App SwiftUI: janela, lista de quadros, barra de ferramentas e o editor (WKWebView).
         .executableTarget(
             name: "ExcaliburForms",
-            dependencies: ["ExcaliburCore"],
+            dependencies: ["ExcaliburCore", .product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/ExcaliburForms"
         ),
         // Núcleo puro (Foundation): quadros e persistência em disco. Testável sem UI.

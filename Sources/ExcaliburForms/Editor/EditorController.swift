@@ -51,6 +51,7 @@ final class EditorController: NSObject, ObservableObject {
     private let library: BoardLibrary
     private var currentBoardID: Board.ID?
     private var pendingBoardID: Board.ID?
+    private var loadGeneration = 0
     private var desiredTheme: EditorTheme = .light
     private var desiredDotGrid = UserDefaults.standard.object(forKey: "dotGrid") as? Bool ?? true
 
@@ -129,20 +130,20 @@ final class EditorController: NSObject, ObservableObject {
     }
 
     private func handleState(_ body: [String: Any]) {
-        activeTool = (body["tool"] as? String).flatMap(Tool.init(rawValue:))
-        hasSelection = body["hasSelection"] as? Bool ?? false
+        update(\.activeTool, (body["tool"] as? String).flatMap(Tool.init(rawValue:)))
+        update(\.hasSelection, body["hasSelection"] as? Bool ?? false)
         if let theme = body["theme"] as? String {
-            editorTheme = theme == "dark" ? .dark : .light
+            update(\.editorTheme, theme == "dark" ? .dark : .light)
         }
-        strokeColor = body["strokeColor"] as? String
-        fontFamily = body["fontFamily"] as? Int ?? fontFamily
-        highlightColor = body["highlightColor"] as? String
+        update(\.strokeColor, body["strokeColor"] as? String)
+        update(\.fontFamily, body["fontFamily"] as? Int ?? fontFamily)
+        update(\.highlightColor, body["highlightColor"] as? String)
 
         if let text = body["text"] as? [String: Any],
            let fontSize = text["fontSize"] as? Double,
            let fontWeight = text["fontWeight"] as? String,
            let textAlign = text["textAlign"] as? String {
-            textSelection = TextSelection(
+            update(\.textSelection, TextSelection(
                 fontSize: fontSize,
                 fontWeight: fontWeight,
                 textAlign: textAlign,
@@ -150,39 +151,39 @@ final class EditorController: NSObject, ObservableObject {
                 backgroundColor: text["backgroundColor"] as? String ?? "transparent",
                 strokeColor: text["strokeColor"] as? String ?? "#1e1e1e",
                 fontFamily: text["fontFamily"] as? Int ?? fontFamily
-            )
+            ))
         } else {
-            textSelection = nil
+            update(\.textSelection, nil)
         }
 
         if let sticky = body["sticky"] as? [String: Any],
            let backgroundColor = sticky["backgroundColor"] as? String,
            let fontSize = sticky["fontSize"] as? Double {
-            stickySelection = StickySelection(
+            update(\.stickySelection, StickySelection(
                 backgroundColor: backgroundColor,
                 fontSize: fontSize,
                 fontFamily: sticky["fontFamily"] as? Int ?? fontFamily
-            )
+            ))
         } else {
-            stickySelection = nil
+            update(\.stickySelection, nil)
         }
 
         if let shape = body["shape"] as? [String: Any],
            let strokeColor = shape["strokeColor"] as? String,
            let backgroundColor = shape["backgroundColor"] as? String {
-            shapeSelection = ShapeSelection(
+            update(\.shapeSelection, ShapeSelection(
                 strokeColor: strokeColor,
                 backgroundColor: backgroundColor,
                 strokeWidth: shape["strokeWidth"] as? String,
                 fillStyle: shape["fillStyle"] as? String ?? "solid",
                 strokeStyle: shape["strokeStyle"] as? String ?? "solid",
                 fillable: shape["fillable"] as? Bool ?? false
-            )
+            ))
         } else {
-            shapeSelection = nil
+            update(\.shapeSelection, nil)
         }
-        selectionTypes = Set(body["selectionTypes"] as? [String] ?? [])
-        selectionLocked = body["locked"] as? Bool ?? false
+        update(\.selectionTypes, Set(body["selectionTypes"] as? [String] ?? []))
+        update(\.selectionLocked, body["locked"] as? Bool ?? false)
 
         let newLayers: [LayerItem] = (body["layers"] as? [[String: Any]] ?? []).compactMap { dict in
             guard let id = dict["id"] as? String,
@@ -196,8 +197,18 @@ final class EditorController: NSObject, ObservableObject {
                 selected: dict["selected"] as? Bool ?? false
             )
         }
-        if newLayers != layers { layers = newLayers }
+        update(\.layers, newLayers)
     }
+
+    /// Só publica o que mudou: cada atribuição a um `@Published` redesenha a
+    /// barra e o inspetor, mesmo com o mesmo valor.
+    private func update<Value: Equatable>(
+        _ keyPath: ReferenceWritableKeyPath<EditorController, Value>,
+        _ value: Value
+    ) {
+        if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
+    }
+
 
     // MARK: - Chamadas à página
 
@@ -211,13 +222,19 @@ final class EditorController: NSObject, ObservableObject {
     }
 
     private func loadBoardNow(_ board: Board) {
-        let content = library.loadContent(board.id)
-        let payload: [String: Any] = [
-            "id": board.id,
-            "scene": content?.scene ?? NSNull(),
-            "files": (content?.files ?? []).map(Self.fileDictionary),
-        ]
-        invoke("window.excalibur.loadBoard(payload)", arguments: ["payload": payload])
+        // trocar rápido de quadro: só o último pedido chega à página
+        loadGeneration += 1
+        let generation = loadGeneration
+        Task {
+            let content = await library.loadPayload(board.id)
+            guard generation == loadGeneration else { return }
+            let payload: [String: Any] = [
+                "id": board.id,
+                "scene": content?.scene ?? NSNull(),
+                "files": content?.files ?? [],
+            ]
+            invoke("window.excalibur.loadBoard(payload)", arguments: ["payload": payload])
+        }
     }
 
     func setTool(_ tool: Tool) {
@@ -328,10 +345,6 @@ final class EditorController: NSObject, ObservableObject {
                 lastError = error.localizedDescription
             }
         }
-    }
-
-    private static func fileDictionary(_ data: Data) -> [String: Any] {
-        (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
     }
 }
 
