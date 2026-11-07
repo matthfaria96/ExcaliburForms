@@ -14,6 +14,25 @@ O editor **não é reescrito** — o fork do monorepo Excalidraw é usado como m
 - Exportar PNG e SVG (quadro, seleção ou área visível) e copiar PNG para a área de transferência (⌘⇧C).
 - Interface minimalista estilo macOS, tema claro/escuro/sistema, atalhos de teclado do macOS.
 
+## Instalar
+
+Requer macOS 14 Sonoma ou mais novo, num Mac com Apple Silicon. A interface é em português.
+
+Escolha um jeito:
+
+1. **Terminal, uma linha (recomendado).** Cole no Terminal:
+   ```sh
+   curl -fsSL https://witchmymac.com/install.sh | bash -s excaliburforms
+   ```
+   Baixa a versão mais recente do GitHub, confere o SHA-256, instala em Aplicativos e abre. Não aparece aviso do macOS, porque arquivos baixados pelo `curl` não ganham a marca de "baixado da internet". Rode a mesma linha de novo para atualizar. O script é aberto: [install.sh](https://witchmymac.com/install.sh).
+2. **Baixe o DMG** em [Releases](https://github.com/matthfaria96/ExcaliburForms/releases) ou em [witchmymac.com/excaliburforms](https://witchmymac.com/excaliburforms/), arraste o ExcaliburForms para Aplicativos e libere uma vez com:
+   ```sh
+   xattr -dr com.apple.quarantine "/Applications/ExcaliburForms.app"
+   ```
+3. **Baixe o DMG** e libere em Ajustes do Sistema: abra o app, clique em OK no aviso e vá em Ajustes do Sistema › Privacidade e Segurança › Abrir Mesmo Assim.
+
+As atualizações seguintes chegam dentro do app (ExcaliburForms › Verificar Atualizações…).
+
 ## Estrutura
 
 - `excalidraw/` — fork do monorepo Excalidraw (upstream `b7de45e`). Mudanças no núcleo ficam em `packages/*`.
@@ -56,4 +75,4 @@ scripts/build-app.sh --install   # monta e instala em /Applications
 
 ## Licença
 
-O editor é o Excalidraw, distribuído sob a licença MIT. Veja [`NOTICE`](NOTICE) e [`excalidraw/LICENSE`](excalidraw/LICENSE).
+MIT ([`LICENSE`](LICENSE)). O editor é o Excalidraw, também distribuído sob a licença MIT. Veja [`NOTICE`](NOTICE) e [`excalidraw/LICENSE`](excalidraw/LICENSE).

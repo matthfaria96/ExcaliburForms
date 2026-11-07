@@ -10,6 +10,7 @@ struct ContentView: View {
     @EnvironmentObject private var ui: WorkspaceUI
 
     @AppStorage("appearance") private var appearance: Appearance = .system
+    @Environment(\.openSettings) private var openSettings
 
     /// Largura reservada à direita do rodapé para o zoom do editor.
     private let footerReserve: CGFloat = 150
@@ -75,7 +76,10 @@ struct ContentView: View {
             Text(editor.lastError ?? library.errorMessage ?? "")
         }
         .preferredColorScheme(colorScheme)
-        .onAppear { applyAppearance() }
+        .onAppear {
+            applyAppearance()
+            Showcase.apply(ui: ui, editor: editor) { openSettings() }
+        }
         .onChange(of: appearance) { _, _ in applyAppearance() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
             applyAppearance()

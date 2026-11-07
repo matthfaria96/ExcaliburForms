@@ -79,9 +79,24 @@ App nativo de macOS (Swift/SwiftUI) feito a partir do Excalidraw: um quadro infi
 
 26. Fluidez com muitas imagens: pinça no trackpad (`onGestureChange`) passou a usar `shouldCacheIgnoreZoom`, sem redesenhar os bitmaps a cada quadro; `EXCALIDRAW_THROTTLE_RENDER` ligado (um desenho por quadro de tela); bitmaps vencidos só pelo zoom são refeitos com orçamento de 6 ms por quadro (`setStaleZoomBudget`); imagens decodificadas ao carregar (`image.decode`); estado nativo limitado a cada 80 ms, com zoom numa mensagem própria (`zoom`); autosave após 1 s de pausa; serialização das imagens fora da thread principal.
 
+27. Desempenho e publicação (1.0.0): o espelho nativo só é recalculado quando a versão dos elementos, a seleção ou os estilos padrão mudam (`nativeStateInputs`); abrir quadro lê/decodifica as imagens na fila de gravação (fora da thread principal); o estado nativo só publica o que mudou. Sparkle 2.10 (`AppUpdater`, feed `witchmymac.com/appcast/excaliburforms.xml`, chave EdDSA do witchmymac).
+
+## Publicação (witchmymac.com)
+
+- Kit em `~/Documents/VSCode/witchmymac-release` (veja `UPDATES.md`): `build-app.sh` assina com o certificado witchmymac via `sign-app.sh` quando o kit existe (senão ad-hoc).
+- Nova versão: subir `VERSION`/`BUILD_NUMBER` em `scripts/build-app.sh` → build → `make-dmg.sh build/ExcaliburForms.app ExcaliburForms-<v> dist` (no kit) → release `v<v>` no GitHub com o DMG → `make-appcast-item.sh` → item no topo de `appcast/excaliburforms.xml` no repositório do site (`~/Documents/VSCode/witchmymac`) + `apps.js` (tag/arquivo) → commit/push do site.
+- Página do app: `witchmymac/excaliburforms/`; imagens em `assets/shots/excaliburforms/`.
+
+## Modo vitrine (capturas do site)
+
+- `excalibur-web/src/showcase.test.ts` gera quadros fictícios (só roda com `SHOWCASE_OUT` e `SHOWCASE_IMAGES`; mockups em PNG: landing, app, palette, type).
+- `scripts/showcase-shot.sh <out.png> light|dark [EXCALIBUR_SHOWCASE_*=…]` com `SHOWCASE_HOME=<home temporária>`: cópia `build/showcase/ExcaliburForms Showcase.app` (bundle `com.excaliburforms.app.showcase`, sem Sparkle), `CFFIXED_USER_HOME`, trava `/tmp/witchmymac-capture.lock`, janela na tela da esquerda. Variáveis em `Sources/ExcaliburForms/Showcase.swift` (tamanho, painel, seleção, ferramenta, comando, Ajustes). `BOARD=demo-planning`, `PANEL_VISIBLE=false`, `SETTINGS_SHOT=<png>`.
+- O WebKit não desenha o canvas numa janela encoberta: por isso a janela vai à frente (sem ativar o app).
+- Depois: `defaults delete com.excaliburforms.app.showcase`, apagar a home temporária, `lsregister -u` da cópia.
+
 ## Estado atual / pendências
 
 - **Verificar no app real** os 8 critérios de conclusão (colar screenshot do clipboard, arrastar/soltar no WKWebView, recorte, camadas, fechar/reabrir, exportação, exclusão de quadros) — interativo, não automatizável aqui.
 - As cores de texto/grifo saíram da barra da janela e voltaram ao inspetor como **um botão de cor cada** (abre uma grade); confirmar com o usuário, que antes pediu para tirar as cores da barra inferior.
 - Rodar `scripts/build-app.sh --install` + reiniciar o app após cada mudança.
-- Não publicar release/site sem pedido explícito do usuário.
+- Não publicar release/site sem pedido explícito do usuário (1.0.0 foi publicado a pedido, em 2026-11-07).

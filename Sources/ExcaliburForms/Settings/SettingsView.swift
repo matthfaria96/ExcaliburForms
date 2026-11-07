@@ -10,7 +10,7 @@ struct SettingsView: View {
         var id: String { rawValue }
     }
 
-    @State private var tab: Tab = .general
+    @State private var tab: Tab = Showcase.settingsTab == "about" ? .about : .general
 
     var body: some View {
         VStack(spacing: 16) {
